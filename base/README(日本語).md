@@ -9,7 +9,7 @@
 以下の項目は、Predictorを実行するユーザーによって実行可能(`chmod +x ./predict.py`)である必要があります：  
 
 * `predict.py`
-* pred_src/pred` (コンパイル済み)
+* `pred_src/pred` (コンパイル済み)
 * `cron/clear-pydap-cache-cronjob.sh`
 * `cron/purge-predictions-cronjob.sh` を実行する。
 

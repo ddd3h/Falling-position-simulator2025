@@ -1,5 +1,5 @@
 # This program predicts the position of a falling balloon
-This program is for Rockoon. For more details, see https://wasa-rocket.vercel.app/
+This is for Rockoon. For more details, see https://wasa-rocket.vercel.app/
 
 ## Purpose
 ・Accurately predicts the position of a falling balloon
