@@ -3,7 +3,9 @@ This is for Rockoon. For more details, see https://wasa-rocket.vercel.app/
 
 ## Purpose
 ・Accurately predicts the position of a falling balloon
+
 ・Retrieve Efficiently balloons
+
 ・Display a Gaussian distribution of falling points
 
 Based on
