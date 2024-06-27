@@ -17,7 +17,7 @@ The `predict/preds/` and `gfs/` directories need to have rwx access by the PHP i
 
     $ pip install -r requirements.txt
 
-Other than that, just clone this repo to a non web-accessible folder and create symlinks to the `predict/` directory in the repo.  
+Other than that, just clone this repo to a non web-accessible folder and create symlinks to the `predict/` directory in the repo.
 
 There are useful configuration options in `predict/includes/config.inc.php`.  
 
