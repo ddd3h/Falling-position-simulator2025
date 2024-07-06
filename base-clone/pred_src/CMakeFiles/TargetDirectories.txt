@@ -1,3 +1,0 @@
-/home/unko/Falling-position-simulator/base/pred_src/CMakeFiles/pred.dir
-/home/unko/Falling-position-simulator/base/pred_src/CMakeFiles/edit_cache.dir
-/home/unko/Falling-position-simulator/base/pred_src/CMakeFiles/rebuild_cache.dir
