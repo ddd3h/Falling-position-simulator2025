@@ -1,5 +1,5 @@
 function get_value(id) {
-    return parseFloat(document.getElementById(id).value);
+    return parseFloat(document.getElementById(id).value); //指定されたIDのHTML要素の値を取得し、float型に変換して返す関数
 }
 
 function clear_errors() {
@@ -25,7 +25,7 @@ function set_error(id, error) {
     document.getElementById(id+"_w").innerHTML = error;
 }
 
-function sanity_check_inputs(mb, mp, mp_set, tar, tba, tar_set, tba_set) {
+function sanity_check_inputs(mb, mp, mp_set, tar, tba, tar_set, tba_set) { //質量や高度の値が妥当かを確認
     if(tar_set && tba_set) {
         set_error('tar', "Can't specify both!");
         set_error('tba', "Can't specify both!");
@@ -67,7 +67,7 @@ function sanity_check_inputs(mb, mp, mp_set, tar, tba, tar_set, tba_set) {
 
 }
 
-function sanity_check_constants(rho_g, rho_a, adm, ga, bd, cd) {
+function sanity_check_constants(rho_g, rho_a, adm, ga, bd, cd) { //各種物理定数が正しいかをチェック
     if(!rho_a || rho_a < 0) {
         show_error('rho_a');
         return 1;
@@ -96,7 +96,7 @@ function sanity_check_constants(rho_g, rho_a, adm, ga, bd, cd) {
     return 0;
 }
 
-function find_rho_g() {
+function find_rho_g() { //ガス密度を設定
     var gas = document.getElementById('gas').value;
     var rho_g;
 

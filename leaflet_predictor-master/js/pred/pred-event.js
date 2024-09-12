@@ -33,13 +33,7 @@ function EH_BurstCalc() {
     $("#burst-calc-show").click(function() {
         $("#burst-calc-wrapper").show();
     });
-    $("#burst-calc-show").hover(
-        function() {
-            $("#ascent,#burst").css("background-color", "#AACCFF");
-        },
-        function() {
-            $("#ascent,#burst").css("background-color", "");
-        });
+
     $("#burst-calc-use").click(function() {
         // Write the ascent rate and burst altitude to the launch card
         $("#ascent").val($("#ar").html());

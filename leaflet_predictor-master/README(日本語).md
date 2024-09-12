@@ -1,25 +1,24 @@
-# CUSF Landing Predictor - Tawhiri / Leaflet Version
+# CUSF 着陸予測ツール - Tawhiri / リーフレット版
 
-Cambridge University Spaceflight landing predictor - a web-based tool for predicting the flight path and landing location of latex meteorological sounding balloons. 
+ケンブリッジ大学スペースフライト着陸予測 - ラテックス気象観測気球の飛行経路と着陸位置を予測するためのウェブベースのツールです。
 
-This fork of the [original predictor](https://github.com/jonsowman/cusf-standalone-predictor) contains a continuation of the original CUSF predictor, which utilises the [Tawhiri API](https://github.com/projecthorus/tawhiri/), and also uses Leaflet for mapping instead of Google Maps. 
+この[original predictor](https://github.com/jonsowman/cusf-standalone-predictor)のフォークには、[Tawhiri API](https://github.com/projecthorus/tawhiri/)を利用したオリジナルのCUSF予測器の続きが含まれており、またGoogle Mapsの代わりにLeafletをマッピングに使用しています。
 
-A live version of the predictor intended for non-commercial use is available at http://predict.sondehub.org/ , hosted by the [Sondehub project](https://github.com/projecthorus/sondehub-infra/wiki).
+Sondehubプロジェクト](https://github.com/projecthorus/sondehub-infra/wiki)によってホストされている、非商用利用を目的とした予測器のライブバージョンは、http://predict.sondehub.org/。
 
-If hosting this yourself, please note that it uses the Sondehub-hosted instance of Tawhiri. Please [contact us](https://github.com/projecthorus/sondehub-infra/wiki#contacts) to discuss fair usage of this API.
+これを自分でホストする場合は、SondehubがホストするTawhiriのインスタンスを使用することに注意してください。このAPIの公正な利用については、[お問い合わせ](https://github.com/projecthorus/sondehub-infra/wiki#contacts) までご連絡ください。
 
-## License
+## ライセンス
 
-This work is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or any later version. This work is distributed in the hope that it will be useful, but without any warranty; without even the implied warranty of merchantability or fitness for a particular purpose.  
+この作品はフリーソフトウェアです。あなたは、Free Software Foundationによって発行されたGNU一般公衆利用許諾契約書(GNU General Public License)のバージョン2またはそれ以降のバージョンのいずれかに従って、この作品の再配布や改変を行うことができます。本作品は有用であることを期待して頒布されますが、商品性や特定目的への適合性の暗黙の保証すらなく、いかなる保証もありません。 
 
-## Credits & Acknowledgments
-Credit as detailed in individual files, but notably:  
+## クレジットと謝辞
+クレジットは個々のファイルに詳述されているが、特に以下の通り：  
 
-* Rich Wareham - The new predictor and the hourly predictor system  
-* Fergus Noble, Ed Moore and many others  
-* Adam Grieg
-* Jon Sowman
+* Rich Wareham - 新しいプレディクターと毎時のプレディクター・システム  
+* ファーガス・ノーブル、エド・ムーア、その他多数  
+* アダム・グリーグ
+* ジョン・ソウマン
 
-Work to switch the predictor across to Tawhiri, and addition of other features by:
-* Mark Jessop - <vk5qi@rfhead.net>
-
+Tawhiriに予想機を切り替える作業と、他の機能の追加：
+* マーク・ジェソップ - <vk5qi@rfhead.net>

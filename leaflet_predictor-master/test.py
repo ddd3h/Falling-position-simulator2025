@@ -6,6 +6,7 @@ import sys
 class CORSRequestHandler (SimpleHTTPRequestHandler): #CORSポリシー??? ➡　異なるオリジンからのアクセスを許可できる仕組み
     def end_headers (self):
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Type', 'text/html; charset=utf-8') # Content-TypeヘッダーにUTF-8を指定
         SimpleHTTPRequestHandler.end_headers(self)
 
 if __name__ == '__main__':

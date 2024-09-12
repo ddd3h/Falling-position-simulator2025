@@ -27,7 +27,6 @@
     <script src="js/colour-map.js" type="text/javascript"></script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
 </head>
 <body>
 <div id="map_canvas"></div>
@@ -56,39 +55,22 @@
 <!-- Scenario information -->
 <div id="scenario_info" class="box ui-corner-all">
     <img src="images/drag_handle.png" class="handle" />
-    <h1>Scenario Information</h1>
-    <span id="cursor_info">Current mouse position: 
-        Lat: <span id="cursor_lat">?</span> 
-        Lon: <span id="cursor_lon">?</span>
+    <h1>基本情報</h1>
+    <span id="cursor_info">(マウスの現在位置)
+        緯度: <span id="cursor_lat">?</span> 
+        経度: <span id="cursor_lon">?</span>
     </span><br />
     <span id="cursor_pred" style="display:none">
-        Range: <span id="cursor_pred_range"></span>km, 
-        Flight Time: <span id="cursor_pred_time"></span><br />
-        Cursor range from launch: <span id="cursor_pred_launchrange">?</span>km, 
-        land: <span id="cursor_pred_landrange">?</span>km
-        <br />
+        距離: <span id="cursor_pred_range"></span>km, 
+        飛行時間: <span id="cursor_pred_time"></span><!-- min --><br />
     </span>
     <span id="cursor_pred_lastrun" style="display:none">
-        Last run at <span id="run_time">?</span> UTC using model <span id="dataset">?</span>
+        最終使用日時 <span id="run_time">?</span><br /> 
+        UTC using model <span id="dataset">?</span>
         <br />
-    </span>
-    <span id="cursor_pred_links" style="display:none">
-        <span class="ui-corner-all control_buttons">
-            <a class="control_button" id="panto">Pan To</a> | 
-            <a class="control_button" id="dlcsv">CSV</a> | 
-            <a class="control_button" id="dlkml">KML</a>
-        </span>
-    </span>
-    <br />
     <span class="ui-corner-all control_buttons">
-        <a class="control_button" id="showHideDebug">Show Debug</a> | 
-        <a class="control_button" id="showHideForm">Hide Launch Card</a> |
-        <a class="control_button" id="about_window_show">About</a>
+        <a class="control_button" id="showHideDebug">Show Debug</a> 
     </span>
-    <br />
-    <span><b>Non-Commercial Use Only. Please read the 'About' page.</b></span>
-    <br />
-    <span><b>The Tawhiri engine is currently experiencing some performance issues. Please be patient!</b></span>
 </div>
 
 <!-- Save location to cookie -->
@@ -122,69 +104,18 @@
     <a id="locations_close">Close this window</a>
 </div>
 
-<!-- About window -->
-<div id="about_window">
-    <h3>Cambridge University Spaceflight Landing Predictor - Leaflet Version (<a href="https://github.com/projecthorus/leaflet_predictor/wiki" target="_blank">github</a>)</h3>
-    <p>A tool to predict the flight path and landing location of latex sounding balloons.</p>
-    <p>Written by <a href="http://github.com/jonsowman" target="_blank">Jon Sowman</a>, <a href="http://github.com/adamgreig" target="_blank">Adam Greig</a> and <a href="http://github.com/danielrichman">Daniel Richman</a> for <a href="http://www.cuspaceflight.co.uk" target="_blank">CUSF</a>.
-    Credit also to <a href="http://github.com/rjw57" target="_blank">Rich Wareham</a> for work on the predictor. Some parts of code taken from old landing prediction software, credit to Rob Anderson, Fergus Noble and Ed Moore.</p>
-    <p>Work to switch to Leaflet mapping and to use the <a href="https://github.com/projecthorus/tawhiri/" target="_blank">Tawhiri API</a> by <a href="http://github.com/darksidelemm" target="_blank">Mark Jessop</a>, for the <a href="https://github.com/projecthorus/sondehub-infra/wiki" target="_blank">SondeHub</a> project.
-    The <a href="https://github.com/projecthorus/tawhiri/#sondehub-tawhiri-instance" target="_blank">Sondehub instance</a> of the Tawhiri API is available for use in non-commercial applications.
-    </p>
-    <p>This predictor uses data from the NOAA GFS models.</p>
-    <p>No guarantee is given for the accuracy, precision or reliability of the data produced by this software, and you use it entirely at your own risk. For more information, see #highaltitude on libera.chat</p>
-    <p>This predictor is intended for <b>non-commercial use only</b>. If you are using this predictor in a commercial setting, please <a href="https://github.com/projecthorus/sondehub-amateur-tracker/wiki/Guide-for-HabHub-Users#for-commercial-users" target="_blank">read this page.</a></p>
-    <p>
-        Copyright 2013 Cambridge University Space Flight
-    </p>
-    <h3>Burst Calculator</h3>
-        <p><a href="https://sondehub.org/calc">Burst Calculator Web Page</a></p>
-    <h4>Usage</h4>
-        <p>
-            This calculator is designed to help you find how much gas to put into a high altitude balloon
-            to achieve a desired burst altitude or ascent rate. You have to know the payload mass (including
-            parachute) and balloon mass.
-        </p>
-        <p>
-            Usage is very straightforward: enter the payload mass into the first box, select the balloon
-            mass from the second box, and type in either a desired burst altitude in meters or ascent rate
-            in meters per second in the relevent box. Pressing enter or clicking away from the box you are
-            typing into will run the calculations, displaying the results in the box at the bottom.
-        </p>
-        <p>
-            The 'Constants' box can be used to adjust constants used by the calculator. These include
-            selecting a type of gas (or entering a custom gas density), adjusting modelling parameters
-            or entering a custom burst diameter or drag coefficient for your balloon. Click the tick box
-            next to the burst diameter or drag coefficient boxes to use a custom value, otherwise the
-            appropriate value for your selected balloon will be used.
-        </p>
-    <h4>About</h4>
-        <p>
-            Written by Adam Greig for CUSF in March 2010. Maths derived from `burst1a` spreadsheet by
-            Steve Randall. Balloon information from Kaymont Totex sounding balloon data.
-        </p>
-        <p>
-            No guarantee is given for the accuracy of any data included or produced by this program, use
-            at your own risk.
-        </p>
-        <p>
-            Copyright 2010 Cambridge University Space Flight
-        </p>
-
-</div>
-
 <!-- Burst calculator window -->
 <div id="burst-calc-wrapper" class="box ui-corner-all">
     <img src="images/drag_handle.png" class="handle" />
     <div id="burst-calc">
-        <b>Burst Calculator</b>
+        <b>バーストの詳細設定</b>
         <br>
         <table id="input_table">
             <tr class="input_row">
-                <td class="input_label" colspan="2">Payload Mass (g)</td>
+                <td class="input_label" colspan="2">積載質量 (g)</td>
                 <td class="input_instruction" rowspan="3">AND</td>
 
-                <td class="input_label" colspan="2">Balloon Mass (g)</td>
+                <td class="input_label" colspan="2">バルーンの質量 (g)</td>
             </tr>
             <tr class="input_row">
                 <td colspan="2">
@@ -236,10 +167,10 @@
                 <td class="input_instruction" colspan="5">THEN</td>
             </tr>
             <tr class="input_row">
-                <td class="input_label" colspan="2">Target Burst Altitude (m)</td>
+                <td class="input_label" colspan="2">目標バースト高度 (m)</td>
 
                 <td class="input_instruction" rowspan="3">OR</td>
-                <td class="input_label" colspan="2">Target Ascent Rate (m/s)</td>
+                <td class="input_label" colspan="2">目標上昇率 (m/s)</td>
             </tr>
             <tr class="input_row">
                 <td colspan="2">
@@ -255,15 +186,15 @@
                 <td id="tar_w" colspan="2">&nbsp;</td>
             </tr>
             <tr class="output_row">
-                <td class="output_label">Burst Altitude:</td>
+                <td class="output_label">バースト高度:</td>
                 <td class="output_data"><span id="ba">33000</span> m</td>
                 <td></td>
-                <td class="output_label">Ascent Rate:</td>
+                <td class="output_label">上昇率:</td>
                 <td class="output_data"><span id="ar">2.33</span> m/s</td>
 
             </tr>
             <tr class="output_row">
-                <td class="output_label">Time to Burst:</td>
+                <td class="output_label">バーストまでの時間:</td>
                 <td class="output_data"><span id="ttb">238</span> min</td>
                 <td></td>
                 <td class="output_label">Neck Lift:</td>
@@ -283,7 +214,7 @@
         </table>
         <br>
         <input type="button" id="burst-calc-advanced-show"
-            name="burst-calc-advanced-show" value="Advanced">
+            name="burst-calc-advanced-show" value="高度な設定">
         <input type="button" id="burst-calc-use" name="burst-calc-submit" 
             value="Use Values"/ >
         <input type="button" id="burst-calc-close" name="burst-calc-submit" 
@@ -296,7 +227,7 @@
         <div class="constants_warning">
             For advanced use only! You can probably leave these alone.
         </div><br />
-        <label class="constant_label" for="gas">Gas</label><br />
+        <label class="constant_label" for="gas">ガス</label><br />
         <select id="gas" class="constant_field">
             <option value="he">Helium</option>
             <option value="h">Hydrogen</option>
@@ -304,14 +235,14 @@
             <option value="ch4">Methane</option>
             <option value="custom">Custom</option>
         </select><br />
-        <label class="constant_label" for="rho_g">Gas Density (kg/m<sup>3</sup>)</label><br />
+        <label class="constant_label" for="rho_g">気体密度 (kg/m<sup>3</sup>)</label><br />
         <input type="text" id="rho_g" value="0.1786" class="constant_field" size="9" disabled="disabled"/><br />
-        <label class="constant_label" for="rho_a">Air Density (kg/m<sup>3</sup>)</label><br />
+        <label class="constant_label" for="rho_a">空気密度 (kg/m<sup>3</sup>)</label><br />
 
         <input type="text" id="rho_a" value="1.2050" class="constant_field" size="9"/><br />
-        <label class="constant_label" for="adm">Air Density Model</label><br />
+        <label class="constant_label" for="adm">空気密度モデル</label><br />
         <input type="text" id="adm" value="7238.3" class="constant_field" size="9"/><br />
-        <label class="constant_label" for="ga">Gravitational<br />Acceleration (m/s<sup>2</sup>)</label><br />
+        <label class="constant_label" for="ga">重力加速度 (m/s<sup>2</sup>)</label><br />
         <input type="text" id="ga" value="9.80665" class="constant_field" size="9" /><br />
         <label class="constant_label" for="bd">Burst Diameter (m)</label><br />
 
@@ -351,7 +282,7 @@
     <form action="" id="modelForm" name="modelForm">
     <table id="launch-card">
         <tr>
-            <td>Launch Site:
+            <td>発射位置:
                 <span>
                     <a id="cookieLocations" class="tipsyLink" 
                         title="View your saved launch sites">Custom</a>
@@ -363,7 +294,7 @@
             </td>
         </tr>
         <tr>
-            <td>Latitude/Longitude:</td>
+            <td>緯度/経度:</td>
             <td>
                 <input id="lat" type="text" size="8" name="lat" value="-34.0297" 
                     onKeyDown="SetSiteOther()">&nbsp;/&nbsp;
@@ -375,30 +306,30 @@
             <td>
                 <span><a id="setWithClick" class="tipsyLink" 
                     title="Use the map to set your desired launch site">
-                    Set With Map</a></span>
+                    発射位置を画面から選択</a></span>
             </td>
             <td>
                 <span>
                     <a id="req_open" class="tipsyLink" 
                         title="Save this location to a browser cookie">
-                        Save Location</a>
+                        位置を保存</a>
                 </span>
             </td>
         </tr>
         <tr>
-            <td>Launch altitude (m):</td>
+            <td>打ち上げ高度 (m):</td>
             <td>
                 <input id="initial_alt" type="text" name="initial_alt" 
                     value="0">
             </td>
         </tr>
         <tr>
-            <td>Launch Time (UTC):</td>
+            <td>打ち上げ時間 (UTC):</td>
             <td>
                     <input id="hour" type="text" name="hour" value="" maxlength="2" size="2"> :
                     <input id="min" type="text" name="min" value="" maxlength="2" size="2">
                     <input id="sec" type="hidden" name="second" value="0"></td></tr>
-                    <tr><td>Launch Date:</td><td>
+                    <tr><td>打ち上げ日:</td><td>
                     <input id="day" type="text" name="day" value="" maxlength="2" size="2">
                     <select id="month" name="month">
                         <!-- Hard-coding these options in. These were generated by PHP in the old code. -->
@@ -419,16 +350,16 @@
             </td>
         <tr>
             <td>
-                Ascent Rate (m/s): 
+                上昇率 (m/s): 
             </td>
             <td><input id="ascent" type="text" name="ascent" value="5"></td>
         </tr>
         <tr>
-            <td>Burst/Float Altitude (m):</td>
+            <td>バースト/フロート高度 (m):</td>
             <td><input id="burst" type="text" name="burst" value="30000"></td>
         </tr>
         <tr>
-            <td>Flight Profile:</td>
+            <td>フライトプロファイル:</td>
             <td><select id="flight_profile">
                 <option value="standard_profile" selected="selected">Standard</option>
                 <option value="float_profile">Float</option>
@@ -439,12 +370,12 @@
             <td colspan="2">
                 <a id="burst-calc-show" class="tipsyLink"
                     title="Use a calculator to find highlighted values">
-                    Use Burst Calculator</a>
+                    バーストの詳細設定</a>
             </td>
         </tr>
         <tr>
             <td>
-                Descent Rate (<a class="tipsyLink" title="At sea level">m/s</a>):
+                降下率 (<a class="tipsyLink" title="At sea level">m/s</a>):
             </td>
             <td><input id="drag" type="text" name="drag" value="5"></td>
         </tr>
@@ -457,7 +388,7 @@
             </td>
         </tr> -->
         <tr>
-            <td>Prediction Type (<a class="tipsyLink" title="Information on the hourly/daily prediction functions." href="https://github.com/projecthorus/leaflet_predictor/wiki#using-the-hourlydaily-prediction-functionality" target="_blank">info</a>):</td>
+            <td>繰り返し予測 (<a class="tipsyLink" title="Information on the hourly/daily prediction functions." href="https://github.com/projecthorus/leaflet_predictor/wiki#using-the-hourlydaily-prediction-functionality" target="_blank">info</a>):</td>
             <td><select id="prediction_type">
                 <option value="single" selected="selected">Single</option>
                 <option value="1_hour">Hourly</option>

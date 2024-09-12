@@ -21,7 +21,7 @@ function initLaunchCard(){
     // $('#min').val(today.getMinutes());
     // $('#sec').val(today.getSeconds());
 
-    var today = moment.utc();
+    var today = moment.utc();  // utc
 
     $('#year').val(today.year());
     $('#day').val(today.date());
@@ -104,7 +104,7 @@ function runPrediction(){
     // Update browser URL.
     history.replaceState(
         {},
-        'CUSF / SondeHub Predictor',
+        'WASA/ Falling-Position-Simulator',
         url.href
     );
 
