@@ -181,15 +181,15 @@ html, body, #map_canvas {
 
 #input_form {
     overflow: hidden;
-    width: 400px;
+    width: 370px;
     padding: 5px 5px 0px 5px;
     bottom: 0; right: 0;
-    max-height: 500px;
+    max-height: 350px;
 }
 
 #launch-card {
     width: 100%;
-    padding: 5px;
+    padding: 10px;
 }
 
 #launch-card tr {
@@ -198,7 +198,7 @@ html, body, #map_canvas {
 
 #scenario_info {
     position: absolute;
-    top: 25px;
+    top: 0px;
     right: 0px;
     width: 300px;
     text-align:center;
@@ -275,3 +275,19 @@ table#trails th {
   .tipsy-south { background-position: bottom center; }
   .tipsy-east { background-position: right center; }
   .tipsy-west { background-position: left center; }
+
+
+/* @media only screen and (max-width: 768px) {
+    #burst-calc-wrapper {
+        transform: scale(0.5) !important;
+    }
+    #burst-calc-constants {
+        transform: scale(0.5) !important;
+    }
+    #notam-settings-wrapper {
+        transform: scale(0.5) !important;
+    }
+    #input_form {
+        transform: scale(0.5) !important;
+
+} */

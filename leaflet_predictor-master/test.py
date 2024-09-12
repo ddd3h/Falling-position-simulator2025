@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 from http.server import HTTPServer, SimpleHTTPRequestHandler, test #HTTPサーバーの起動
 # http.serverって確か動作確認に使うやつだと思ってた。
 import sys

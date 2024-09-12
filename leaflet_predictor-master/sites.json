@@ -1,58 +1,38 @@
 {
-    "Auburn": {
-        "altitude"  :   306,
-        "latitude"  :   -34.0297,
-        "longitude" :   138.6917
-    },
-    "Churchill": {
-        "latitude"  :   52.2135,
-        "longitude" :   0.0964,
-        "altitude"  :   0
-    },
-    "Elsworth": {
-        "latitude"  :   52.2511,
-        "longitude" :   -0.0927,
-        "altitude"  :   0
-    },
-    "Adelaide": {
+    "南レク南楽園ファミリーパーク": {
         "altitude"  :   0,
-        "latitude"  :   -34.9499,
-        "longitude" :   138.5194
+        "latitude"  :   33.13325864,
+        "longitude" :   132.50518667
     },
-    "Tullamarine": {
-        "altitude": 0,
-        "latitude": -37.6656,
-        "longitude": 144.8319
+    "津島プレーランド": {
+        "altitude"  :   0,
+        "latitude"  :   33.126600310031,
+        "longitude" :   132.50341761149
     },
-    "Boston Spa": { 
-        "latitude"  :   53.8997,
-        "longitude" :   -1.3629,
-        "altitude"  :   0
+    "須ノ川公園キャンプ場": {
+        "altitude"  :   0,
+        "latitude"  :   33.0417773,
+        "longitude" :   132.4863204
     },
-    "Mt Barker": {
-        "altitude"  :   360,
-        "latitude"  :   -35.0765,
-        "longitude" :   138.8569
+    "南レク松軒山公園": {
+        "altitude"  :   0,
+        "latitude"  :   32.972556, 
+        "longitude" :   132.555781
     },
-    "Cookstown": {
-        "altitude"  :   60,
-        "latitude"  :   54.632162,
-        "longitude" :   -6.757982
+    "南レク御荘公園": {
+        "altitude"  :   0,
+        "latitude"  :   32.9644882,
+        "longitude" :   132.5523812
     },
-    "Preston St Mary": {
-        "latitude"  :   52.1215,
-        "longitude" :   0.8078,
-        "altitude"  :   70
+    "南レク城辺公園": { 
+        "altitude"  :   0,
+        "latitude"  :   32.95287,
+        "longitude" :   132.58429
     },
-    "Ross-on-Wye": {
-        "altitude"  :   150,
-        "latitude"  :   51.95023,
-        "longitude" :   -2.5445
-    },
-    "Ararat": {
-        "altitude"  :   295,
-        "latitude"  :   -37.294,
-        "longitude" :   142.9374
+    "土佐西南大規模公園 大方地区": {
+        "altitude"  :   0,
+        "latitude"  :   33.0245153,
+        "longitude" :   133.0164473
     }
 
 }
