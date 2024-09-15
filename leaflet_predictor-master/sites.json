@@ -1,28 +1,28 @@
 {
     "南レク南楽園ファミリーパーク": {
         "altitude"  :   0,
-        "latitude"  :   33.13325864,
-        "longitude" :   132.50518667
+        "latitude"  :   33.13492,
+        "longitude" :   132.50477
     },
     "津島プレーランド": {
         "altitude"  :   0,
-        "latitude"  :   33.126600310031,
-        "longitude" :   132.50341761149
+        "latitude"  :   33.12604,
+        "longitude" :   132.50333
     },
     "須ノ川公園キャンプ場": {
         "altitude"  :   0,
-        "latitude"  :   33.0417773,
-        "longitude" :   132.4863204
+        "latitude"  :   33.04107,
+        "longitude" :   132.48698
     },
     "南レク松軒山公園": {
         "altitude"  :   0,
-        "latitude"  :   32.972556, 
-        "longitude" :   132.555781
+        "latitude"  :   32.97239,
+        "longitude" :   1132.55583
     },
     "南レク御荘公園": {
         "altitude"  :   0,
-        "latitude"  :   32.9644882,
-        "longitude" :   132.5523812
+        "latitude"  :   32.96417,
+        "longitude" :   132.55206
     },
     "南レク城辺公園": { 
         "altitude"  :   0,
@@ -31,8 +31,8 @@
     },
     "土佐西南大規模公園 大方地区": {
         "altitude"  :   0,
-        "latitude"  :   33.0245153,
-        "longitude" :   133.0164473
+        "latitude"  :   33.02483,
+        "longitude" :   133.01651
     }
 
 }
