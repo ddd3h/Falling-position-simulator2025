@@ -319,11 +319,24 @@
             </td>
         </tr>
         <tr>
-            <td>打ち上げ時間 (UTC):</td>
+            <td>打ち上げ時間 (JST):</td>
             <td>
                     <input id="hour" type="text" name="hour" value="" maxlength="2" size="2" style="width: 1.5em;"> :
                     <input id="min" type="text" name="min" value="" maxlength="2" size="2" style="width: 1.5em;">
                     <input id="sec" type="hidden" name="second" value="0"></td></tr>
+                    <script>
+                        function updateTime() {
+                            const now = new Date();
+                            const hours = now.getHours().toString().padStart(2, '0');
+                            const minutes = now.getMinutes().toString().padStart(2, '0');
+                            
+                            document.getElementById('hour').value = hours;
+                            document.getElementById('min').value = minutes;
+                        }
+                    
+                        // ページ読み込み時に現在時間を表示
+                        window.onload = updateTime;
+                    </script>
                     <tr><td>打ち上げ日:</td><td>
                     <input id="year" type="text" name="year" value="" maxlength="4" size="2" style="width: 2.5em;">年
                     <select id="month" name="month" size="1" style="width: 3em;">

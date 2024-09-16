@@ -47,7 +47,8 @@ function runPrediction(){
     var minute = $('#min').val();
 
     // Months are zero-indexed in Javascript. Wat.
-    var launch_time = moment.utc([year, month-1, day, hour, minute, 0, 0]);
+    var launch_time_plus_9_hours = moment.utc([year, month-1, day, hour, minute, 0, 0]);
+    var launch_time = launch_time_plus_9_hours.subtract(9, 'hours');
     run_settings.launch_datetime = launch_time.format();
     extra_settings.launch_moment = launch_time;
 
