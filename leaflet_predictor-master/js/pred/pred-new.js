@@ -150,6 +150,7 @@ function tawhiriRequest(settings, extra_settings){
         hourly_mode = true;
         // First up clear off anything on the map.
         clearMapItems();
+        clearMarkers();
 
         // Also clean up any hourly prediction data.
         hourly_predictions = {};
@@ -167,6 +168,9 @@ function tawhiriRequest(settings, extra_settings){
             time_step = 6;
         } else if (settings.pred_type=='12_hour'){
             time_step = 12;
+        } else if (settings.pred_type=='Gaussian_distribution'){
+            plotGaussianDistribution(settings, extra_settings);
+            return;
         } else {
             throwError("Invalid time step.");
             return;
@@ -323,6 +327,7 @@ function plotStandardPrediction(prediction){
 
     appendDebug("Flight data parsed, creating map plot...");
     clearMapItems();
+    clearMarkers();
 
     var launch = prediction.launch;
     var landing = prediction.landing;
@@ -405,7 +410,7 @@ function plotStandardPrediction(prediction){
     map_items['path_polyline'] = path_polyline;
 
     // Pan to the new position
-    map.setView(launch.latlng,8)
+    map.setView(launch.latlng,map.getZoom())
 
     return true;
 }
@@ -661,4 +666,132 @@ function writeHourlyPredictionInfo(settings, metadata, request) {
 
     $("#run_time").html(run_time);
     $("#dataset").html(dataset);
+}
+
+var markers = [];
+
+function clearMarkers() {
+    markers.forEach(function(marker) {
+        map.removeLayer(marker);
+    });
+    markers = []; // Clear the markers array
+}
+
+function plotGaussianDistribution(settings, extra_settings) {
+    var burst_altitude = parseFloat($('#burst').val());
+    var descent_rate = parseFloat($('#drag').val());
+
+    clearMarkers();
+
+    // Create Gaussian distributed values for burst altitude and descent rate
+    var burst_altitudes = [];
+    var descent_rates = [];
+
+    var burst_std_dev = burst_altitude * 0.15; // ±15% of burst altitude
+    var descent_std_dev = 1.0;  // ±1 m/s for descent rate
+
+    // Generate Gaussian distribution for burst altitude and descent rate
+    for (var i = 0; i < 100; i++) {
+        var burst_sample = gaussianRandom(burst_altitude, burst_std_dev);
+        var descent_sample = gaussianRandom(descent_rate, descent_std_dev);
+        burst_altitudes.push(burst_sample);
+        descent_rates.push(descent_sample);
+    }
+
+    // Central landing point (mean values)
+    var centralSettings = { ...settings };
+    centralSettings.burst_altitude = burst_altitude;
+    centralSettings.descent_rate = descent_rate;
+
+    var central_point = null;
+    $.get(tawhiri_api, centralSettings)
+        .done(function (data) {
+            central_point = parsePrediction(data.prediction).landing.latlng;
+
+            // Plot the distributions on the map
+            var landing_points = [];
+            for (var i = 0; i < burst_altitudes.length; i++) {
+                var settings_copy = { ...settings };
+                settings_copy.burst_altitude = burst_altitudes[i];
+                settings_copy.descent_rate = descent_rates[i];
+
+                // Run the prediction for each sample
+                $.get(tawhiri_api, settings_copy)
+                    .done(function (data) {
+                        var prediction_results = parsePrediction(data.prediction);
+                        var landing_point = prediction_results.landing.latlng;
+                        landing_points.push(landing_point);
+
+                        // Calculate distance from the central point
+                        var distance = calculateDistance(central_point, landing_point);
+
+                        // Map distance to a color (red at center, blue farther away)
+                        var color = mapDistanceToColor(distance);
+
+                        // Plot each prediction result with color
+                        plotMultiplePredictionWithColor(prediction_results, i, color);
+                    })
+                    .fail(function (data) {
+                        console.error("Prediction failed for Gaussian sample");
+                    });
+            }
+        })
+        .fail(function (data) {
+            console.error("Central point prediction failed");
+        });
+}
+
+function gaussianRandom(mean, stdDev) {
+    var u = 0, v = 0;
+    while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+    while(v === 0) v = Math.random();
+    let z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    return z * stdDev + mean;
+}
+
+// Function to calculate distance between two lat/lng points
+function calculateDistance(point1, point2) {
+    var lat1 = point1.lat, lon1 = point1.lng;
+    var lat2 = point2.lat, lon2 = point2.lng;
+    var R = 6371e3; // metres
+    var φ1 = lat1 * Math.PI/180;
+    var φ2 = lat2 * Math.PI/180;
+    var Δφ = (lat2-lat1) * Math.PI/180;
+    var Δλ = (lon2-lon1) * Math.PI/180;
+
+    var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    var distance = R * c; // in meters
+    return distance;
+}
+
+// Function to map distance to color (warm colors near center, cool colors farther away)
+function mapDistanceToColor(distance) {
+    var maxDistance = 50000; // Maximum distance to map (in meters)
+    var ratio = Math.min(distance / maxDistance, 1); // Normalize distance to [0, 1]
+
+    // HSL color hue range from red (0°) to blue/purple (240°)
+    var hue = (1 - ratio) * 240; // Red at ratio = 0, Blue/Purple at ratio = 1
+
+    // Full saturation (100%) and medium lightness (50%) for vibrant colors
+    return 'hsl(' + hue + ', 100%, 50%)';
+}
+
+// Modify this function to include color
+function plotMultiplePredictionWithColor(prediction_results, i, color) {
+    var latlng = prediction_results.landing.latlng;
+    var marker = L.circleMarker(latlng, {
+        radius: 5,
+        fillColor: color,
+        color: color,
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map);
+
+    // Optionally store markers for further interaction
+    markers.push(marker);
 }
