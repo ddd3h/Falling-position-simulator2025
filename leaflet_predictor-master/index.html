@@ -290,7 +290,7 @@
             </td>
         </tr>
         <tr>
-            <td>緯度/経度:</td>
+            <td>緯度/経度(10進法):</td>
             <td>
                 <input id="lat" type="text" size="8" name="lat" value="33.13492" 
                     onKeyDown="SetSiteOther()">&nbsp;/&nbsp;
@@ -313,9 +313,9 @@
             </td>
         </tr>
         <tr>
-            <td>打ち上げ高度 (m):</td>
+            <td>打ち上げ高度:</td>
             <td>
-                <input id="initial_alt" type="text" name="initial_alt" size="2" value="0">
+                <input id="initial_alt" type="text" name="initial_alt" size="2" value="0">(m)
             </td>
         </tr>
         <tr>
@@ -358,13 +358,13 @@
             </td>
         <tr>
             <td>
-                上昇率 (m/s): 
+                上昇率: 
             </td>
-            <td><input id="ascent" type="text" name="ascent" value="7" style="width: 1.5em;"></td>
+            <td><input id="ascent" type="text" name="ascent" value="7" style="width: 1.5em;">(m/s)</td>
         </tr>
         <tr>
-            <td>バースト/フロート高度 (m):</td>
-            <td><input id="burst" type="text" name="burst" value="31600" size="4"></td>
+            <td>バースト/フロート高度:</td>
+            <td><input id="burst" type="text" name="burst" value="31600" size="4">(m)</td>
         </tr>
         <tr>
             <td>フライトプロファイル:</td>
@@ -383,9 +383,9 @@
         </tr>
         <tr>
             <td>
-                降下率 (<a class="tipsyLink" title="At sea level">m/s</a>):
+                降下率:
             </td>
-            <td><input id="drag" type="text" name="drag" value="7" style="width: 1.5em;"></td>
+            <td><input id="drag" type="text" name="drag" value="7" style="width: 1.5em;">(m/s)</td>
         </tr>
     <!--    <tr><td>Display UK NOTAMS &amp; Airspace: </td>
             <td>
@@ -396,7 +396,7 @@
             </td>
         </tr> -->
         <tr>
-            <td>繰り返し予測 (<a class="tipsyLink" title="Information on the hourly/daily prediction functions." href="https://github.com/projecthorus/leaflet_predictor/wiki#using-the-hourlydaily-prediction-functionality" target="_blank">info</a>):</td>
+            <td>繰り返し予測:</td>
             <td><select id="prediction_type">
                 <option value="single" selected="selected">Single</option>
                 <option value="1_hour">Hourly</option>
