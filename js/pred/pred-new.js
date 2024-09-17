@@ -675,7 +675,7 @@ function clearMarkers() {
     markers.forEach(function(marker) {
         map.removeLayer(marker);
     });
-    markers = []; // Clear the markers array
+    markers = [];
 }
 
 function plotGaussianDistribution(settings, extra_settings) {
@@ -688,8 +688,8 @@ function plotGaussianDistribution(settings, extra_settings) {
     var burst_altitudes = [];
     var descent_rates = [];
 
-    var burst_std_dev = burst_altitude * 0.15; // ±15% of burst altitude
-    var descent_std_dev = 1.0;  // ±1 m/s for descent rate
+    var burst_std_dev = burst_altitude * 0.05; // ±15%/±10%/±5%  of burst altitude
+    var descent_std_dev = 0.5;  // ±0.5 m/s for descent rate
 
     // Generate Gaussian distribution for burst altitude and descent rate
     for (var i = 0; i < 100; i++) {
@@ -744,44 +744,38 @@ function plotGaussianDistribution(settings, extra_settings) {
 
 function gaussianRandom(mean, stdDev) {
     var u = 0, v = 0;
-    while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+    while(u === 0) u = Math.random();
     while(v === 0) v = Math.random();
     let z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
     return z * stdDev + mean;
 }
 
-// Function to calculate distance between two lat/lng points
-function calculateDistance(point1, point2) {
-    var lat1 = point1.lat, lon1 = point1.lng;
-    var lat2 = point2.lat, lon2 = point2.lng;
-    var R = 6371e3; // metres
-    var φ1 = lat1 * Math.PI/180;
-    var φ2 = lat2 * Math.PI/180;
-    var Δφ = (lat2-lat1) * Math.PI/180;
-    var Δλ = (lon2-lon1) * Math.PI/180;
-
-    var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    var distance = R * c; // in meters
-    return distance;
-}
-
 // Function to map distance to color (warm colors near center, cool colors farther away)
 function mapDistanceToColor(distance) {
-    var maxDistance = 50000; // Maximum distance to map (in meters)
-    var ratio = Math.min(distance / maxDistance, 1); // Normalize distance to [0, 1]
+    var maxDistance = 50000; 
+    var ratio = Math.min(distance / maxDistance, 1); 
 
-    // HSL color hue range from red (0°) to blue/purple (240°)
-    var hue = (1 - ratio) * 240; // Red at ratio = 0, Blue/Purple at ratio = 1
+    var hue;
+    switch (gradientType) {
+        case 'red_to_blue': // Red (near) to Blue (far)
+            hue = (1 - ratio) * 240; // Red at ratio = 0, Blue at ratio = 1
+            break;
+        case 'green_to_orange': // Green (near) to Orange (far)
+            hue = (1 - ratio) * 60 + 90; // Green at ratio = 0 (90°), Orange at ratio = 1 (30°)
+            break;
+        case 'yellow_to_purple': // Yellow (near) to Purple (far)
+            hue = (1 - ratio) * 280 + 60; // Yellow at ratio = 0 (60°), Purple at ratio = 1 (280°)
+            break;
+        case 'cyan_to_red': // Cyan (near) to Red (far)
+            hue = (1 - ratio) * 360; // Cyan at ratio = 0 (180°), Red at ratio = 1 (0°)
+            break;
+        default:
+            hue = (1 - ratio) * 240; // Default to warm to cool gradient
+    }
 
-    // Full saturation (100%) and medium lightness (50%) for vibrant colors
     return 'hsl(' + hue + ', 100%, 50%)';
 }
 
-// Modify this function to include color
 function plotMultiplePredictionWithColor(prediction_results, i, color) {
     var latlng = prediction_results.landing.latlng;
     var marker = L.circleMarker(latlng, {
@@ -793,6 +787,5 @@ function plotMultiplePredictionWithColor(prediction_results, i, color) {
         fillOpacity: 0.8
     }).addTo(map);
 
-    // Optionally store markers for further interaction
     markers.push(marker);
 }
