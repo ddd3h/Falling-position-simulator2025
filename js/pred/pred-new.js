@@ -761,8 +761,8 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, burst_dif
     var predict_description = '<b>' + (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':</b><br/>' +
         '<b>着地予測(10進法):</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
         '<b>着地予測(60進法):</b> ' + latDMS + ', ' + lngDMS + '<br/>' +
-        '<b>バースト高度差:</b> ' + (burst_diff / 3 * 100).toFixed(2) + '% <br/>' +
-        '<b>降下速度差:</b> ' + (descent_diff / 3 * 100).toFixed(2) + '% <br/>';
+        '<b>バースト高度差:</b> ' + 'σ=' + burst_diff .toFixed(2) + '<br/>' +
+        '<b>降下速度差:</b> ' + 'σ=' + descent_diff.toFixed(2) + '<br/>';
 
     // Bind popup to the marker
     var landing_popup = new L.popup({
