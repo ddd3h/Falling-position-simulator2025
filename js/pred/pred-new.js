@@ -688,6 +688,9 @@ function plotGaussianDistribution(settings, extra_settings) {
         .done(function (data) {
             central_point = parsePrediction(data.prediction).landing.latlng;
 
+            var central_prediction_results = parsePrediction(data.prediction);
+            plotMultiplePredictionWithColor(central_prediction_results, -1, 'red'); // -1は中央点を示す
+
             // Plot the distributions on the map
             var landing_points = [];
             for (let i = 0; i < burst_altitudes.length; i++) { // let を使うことでスコープを固定
@@ -708,7 +711,7 @@ function plotGaussianDistribution(settings, extra_settings) {
                         var color = diffToColor(burst_diff, descent_diff);
             
                         // Plot each prediction result with color
-                        plotMultiplePredictionWithColor(prediction_results, i, color);
+                        plotMultiplePredictionWithColor(prediction_results, i, color, burst_diff, descent_diff);
                     })
                     .fail(function (data) {
                         console.error("Prediction failed for Gaussian sample");
@@ -737,10 +740,11 @@ function diffToColor(burst_diff, descent_diff) {
     return 'rgb(' + red + ',' + green + ',' + blue + ')';
 }
 
-function plotMultiplePredictionWithColor(prediction_results, i, color) {
+function plotMultiplePredictionWithColor(prediction_results, i, color, burst_diff = 0, descent_diff = 0) {
     var latlng = prediction_results.landing.latlng;
+    changeRadius = (i === -1 ? 8 : 5 );
     var marker = L.circleMarker(latlng, {
-        radius: 5,
+        radius: changeRadius,
         fillColor: color,
         color: color,
         weight: 1,
@@ -751,9 +755,14 @@ function plotMultiplePredictionWithColor(prediction_results, i, color) {
 
     markers.push(marker);
 
-    var predict_description = '<b>Sample ' + (i + 1) + ':</b><br/>' +
-        '<b>Landing:</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
-        '<b>Flight Path:</b> Click to show/hide flight path';
+    var latDMS = toDMS(latlng.lat);  
+    var lngDMS = toDMS(latlng.lng); 
+        
+    var predict_description = '<b>' + (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':</b><br/>' +
+        '<b>着地予測(10進法):</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
+        '<b>着地予測(60進法):</b> ' + latDMS + ', ' + lngDMS + '<br/>' +
+        '<b>バースト高度差:</b> ' + (burst_diff / 3 * 100).toFixed(2) + '% <br/>' +
+        '<b>降下速度差:</b> ' + (descent_diff / 3 * 100).toFixed(2) + '% <br/>';
 
     // Bind popup to the marker
     var landing_popup = new L.popup({
@@ -764,6 +773,19 @@ function plotMultiplePredictionWithColor(prediction_results, i, color) {
     marker.bindPopup(landing_popup);
     
     // Add click event to show/hide flight path
+    if (i === -1) {
+        marker.openPopup();
+    }
+
+    // Automatically show the flight path for the central point
+    if (i === -1) {
+        var path_polyline = L.polyline(prediction_results.flight_path, {
+            weight: 3,
+            color: '#000000'
+        }).addTo(map);
+        marker.flight_path = path_polyline;
+    }
+
     marker.on('click', function(e) {
         var current_marker = e.target;
 
@@ -780,4 +802,24 @@ function plotMultiplePredictionWithColor(prediction_results, i, color) {
             current_marker.flight_path = path_polyline;
         }
     });
+}
+
+function toDMS(deg) {
+    var d = Math.floor(deg); // 度
+    var minfloat = (deg - d) * 60;
+    var m = Math.floor(minfloat); // 分
+    var secfloat = (minfloat - m) * 60;
+    var s = Math.round(secfloat); // 秒
+
+    if (s === 60) {
+        m++;
+        s = 0;
+    }
+
+    if (m === 60) {
+        d++;
+        m = 0;
+    }
+
+    return d + "°" + m + "'" + s + "\"";
 }
