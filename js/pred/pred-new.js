@@ -688,8 +688,8 @@ function plotGaussianDistribution(settings, extra_settings) {
     var burst_altitudes = [];
     var descent_rates = [];
 
-    var burst_std_dev = burst_altitude * 0.15; // ±15% of burst altitude
-    var descent_std_dev = 1.0;  // ±1 m/s for descent rate
+    var burst_std_dev = burst_altitude * 0.05; // ±15% of burst altitude
+    var descent_std_dev = 0.5;  // ±1 m/s for descent rate
 
     // Generate Gaussian distribution for burst altitude and descent rate
     for (var i = 0; i < 100; i++) {
@@ -711,24 +711,23 @@ function plotGaussianDistribution(settings, extra_settings) {
 
             // Plot the distributions on the map
             var landing_points = [];
-            for (var i = 0; i < burst_altitudes.length; i++) {
+            for (let i = 0; i < burst_altitudes.length; i++) { // let を使うことでスコープを固定
                 var settings_copy = { ...settings };
                 settings_copy.burst_altitude = burst_altitudes[i];
                 settings_copy.descent_rate = descent_rates[i];
-
+            
                 // Run the prediction for each sample
                 $.get(tawhiri_api, settings_copy)
                     .done(function (data) {
                         var prediction_results = parsePrediction(data.prediction);
                         var landing_point = prediction_results.landing.latlng;
                         landing_points.push(landing_point);
-
-                        // Calculate distance from the central point
-                        var distance = calculateDistance(central_point, landing_point);
-
+            
+                        var burst_diff = Math.abs(burst_altitudes[i] - burst_altitude) / burst_std_dev;
+                        var descent_diff = Math.abs(descent_rates[i] - descent_rate) / descent_std_dev;
                         // Map distance to a color (red at center, blue farther away)
-                        var color = mapDistanceToColor(distance);
-
+                        var color = diffToColor(burst_diff, descent_diff);
+            
                         // Plot each prediction result with color
                         plotMultiplePredictionWithColor(prediction_results, i, color);
                     })
@@ -750,34 +749,13 @@ function gaussianRandom(mean, stdDev) {
     return z * stdDev + mean;
 }
 
-// Function to calculate distance between two lat/lng points
-function calculateDistance(point1, point2) {
-    var lat1 = point1.lat, lon1 = point1.lng;
-    var lat2 = point2.lat, lon2 = point2.lng;
-    var R = 6371e3; // metres
-    var φ1 = lat1 * Math.PI/180;
-    var φ2 = lat2 * Math.PI/180;
-    var Δφ = (lat2-lat1) * Math.PI/180;
-    var Δλ = (lon2-lon1) * Math.PI/180;
+function diffToColor(burst_diff, descent_diff) {
 
-    var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    var red = 255 - Math.round(255 * burst_diff /3); 
+    var blue = 255 - Math.round(255 * descent_diff /3);    
+    var green = 255;
 
-    var distance = R * c; // in meters
-    return distance;
-}
-
-// Function to map distance to color (warm colors near center, cool colors farther away)
-function mapDistanceToColor(distance) {
-    var maxDistance = 50000; // Maximum distance to map (in meters)
-    var ratio = Math.min(distance / maxDistance, 1); // Normalize distance to [0, 1]
-
-    // HSL color hue range from red (0°) to blue/purple (240°)
-    var hue = (1 - ratio) * 240; // Red at ratio = 0, Blue/Purple at ratio = 1
-
-    return 'hsl(' + hue + ', 100%, 50%)';
+    return 'rgb(' + red + ',' + green + ',' + blue + ')';
 }
 
 function plotMultiplePredictionWithColor(prediction_results, i, color) {
