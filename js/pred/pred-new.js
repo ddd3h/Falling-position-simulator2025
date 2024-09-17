@@ -564,30 +564,6 @@ function plotMultiplePrediction(prediction, current_hour){
 
     }
 
-    // var pop_marker = L.marker(
-    //     burst.latlng,
-    //     {
-    //         title: 'Balloon burst ('+burst.latlng.lat.toFixed(4)+', '+burst.latlng.lng.toFixed(4)+ 
-    //         ' at altitude ' + burst.latlng.alt.toFixed(0) + ') at ' 
-    //         + burst.datetime.format("HH:mm") + " UTC",
-    //         icon: burst_icon
-    //     }
-    // ).addTo(map);
-
-    // var path_polyline = L.polyline(
-    //     prediction.flight_path,
-    //     {
-    //         weight: 3,
-    //         color: '#000000'
-    //     }
-    // ).addTo(map);
-
-
-
-    // Pan to the new position
-    // map.panTo(launch.latlng);
-    // map.setZoom(8);
-
     return true;
 }
 
@@ -674,6 +650,9 @@ var markers = [];
 function clearMarkers() {
     markers.forEach(function(marker) {
         map.removeLayer(marker);
+        if (marker.flight_path) {
+            map.removeLayer(marker.flight_path);
+        }
     });
     markers = []; 
 }
@@ -766,8 +745,39 @@ function plotMultiplePredictionWithColor(prediction_results, i, color) {
         color: color,
         weight: 1,
         opacity: 1,
-        fillOpacity: 0.8
+        fillOpacity: 0.8,
+        index: i
     }).addTo(map);
 
     markers.push(marker);
+
+    var predict_description = '<b>Sample ' + (i + 1) + ':</b><br/>' +
+        '<b>Landing:</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
+        '<b>Flight Path:</b> Click to show/hide flight path';
+
+    // Bind popup to the marker
+    var landing_popup = new L.popup({
+        autoClose: false,
+        closeOnClick: false,
+    }).setContent(predict_description);
+    
+    marker.bindPopup(landing_popup);
+    
+    // Add click event to show/hide flight path
+    marker.on('click', function(e) {
+        var current_marker = e.target;
+
+        if (current_marker.flight_path) {
+            // If flight path exists, remove it
+            map.removeLayer(current_marker.flight_path);
+            current_marker.flight_path = null;
+        } else {
+            // Generate and show flight path when clicked
+            var path_polyline = L.polyline(prediction_results.flight_path, {
+                weight: 3,
+                color: '#000000'
+            }).addTo(map);
+            current_marker.flight_path = path_polyline;
+        }
+    });
 }
