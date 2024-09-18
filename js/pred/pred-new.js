@@ -658,28 +658,34 @@ function clearMarkers() {
 }
 
 function plotGaussianDistribution(settings, extra_settings) {
+    var ascent_rate = parseFloat($('#ascent').val());
     var burst_altitude = parseFloat($('#burst').val());
     var descent_rate = parseFloat($('#drag').val());
 
     clearMarkers();
 
     // Create Gaussian distributed values for burst altitude and descent rate
+    var ascent_rates = [];
     var burst_altitudes = [];
     var descent_rates = [];
 
-    var burst_std_dev = burst_altitude * 0.05; // ±15% of burst altitude
-    var descent_std_dev = 0.5;  // ±1 m/s for descent rate
+    var ascent_std_dev = 0.5;  // ±0.5 m/s for ascent rate
+    var burst_std_dev = burst_altitude * 0.05; // ±5% of burst altitude
+    var descent_std_dev = 0.5;  // ±0.5 m/s for descent rate
 
     // Generate Gaussian distribution for burst altitude and descent rate
     for (var i = 0; i < 100; i++) {
+        var ascent_sample = gaussianRandom(ascent_rate, ascent_std_dev);
         var burst_sample = gaussianRandom(burst_altitude, burst_std_dev);
         var descent_sample = gaussianRandom(descent_rate, descent_std_dev);
+        ascent_rates.push(ascent_sample);
         burst_altitudes.push(burst_sample);
         descent_rates.push(descent_sample);
     }
 
     // Central landing point (mean values)
     var centralSettings = { ...settings };
+    centralSettings.ascent_rate = ascent_rate;
     centralSettings.burst_altitude = burst_altitude;
     centralSettings.descent_rate = descent_rate;
 
@@ -695,6 +701,7 @@ function plotGaussianDistribution(settings, extra_settings) {
             var landing_points = [];
             for (let i = 0; i < burst_altitudes.length; i++) { // let を使うことでスコープを固定
                 var settings_copy = { ...settings };
+                settings_copy.ascent_rate = ascent_rates[i];
                 settings_copy.burst_altitude = burst_altitudes[i];
                 settings_copy.descent_rate = descent_rates[i];
             
@@ -705,13 +712,14 @@ function plotGaussianDistribution(settings, extra_settings) {
                         var landing_point = prediction_results.landing.latlng;
                         landing_points.push(landing_point);
             
+                        var ascent_diff = Math.abs(ascent_rates[i] - ascent_rate)/ ascent_std_dev;
                         var burst_diff = Math.abs(burst_altitudes[i] - burst_altitude) / burst_std_dev;
                         var descent_diff = Math.abs(descent_rates[i] - descent_rate) / descent_std_dev;
                         // Map distance to a color (red at center, blue farther away)
-                        var color = diffToColor(burst_diff, descent_diff);
+                        var color = diffToColor(ascent_diff, burst_diff, descent_diff);
             
                         // Plot each prediction result with color
-                        plotMultiplePredictionWithColor(prediction_results, i, color, burst_diff, descent_diff);
+                        plotMultiplePredictionWithColor(prediction_results, i, color, ascent_diff, burst_diff, descent_diff);
                     })
                     .fail(function (data) {
                         console.error("Prediction failed for Gaussian sample");
@@ -731,16 +739,16 @@ function gaussianRandom(mean, stdDev) {
     return z * stdDev + mean;
 }
 
-function diffToColor(burst_diff, descent_diff) {
+function diffToColor(ascent_diff, burst_diff, descent_diff) {
 
-    var red = 255 - Math.round(255 * burst_diff /3); 
-    var blue = 255 - Math.round(255 * descent_diff /3);    
-    var green = 255;
+    var red = 255 - Math.round(255 * ascent_diff /3);
+    var blue = 255 - Math.round(255 * burst_diff /3); 
+    var green = 255 - Math.round(255 * descent_diff /3); 
 
     return 'rgb(' + red + ',' + green + ',' + blue + ')';
 }
 
-function plotMultiplePredictionWithColor(prediction_results, i, color, burst_diff = 0, descent_diff = 0) {
+function plotMultiplePredictionWithColor(prediction_results, i, color,ascent_diff = 0, burst_diff = 0, descent_diff = 0) {
     var latlng = prediction_results.landing.latlng;
 
     var landing_time = prediction_results.landing.datetime.add(9, 'hours').format("YYYY-MM-DD HH:mm:ss");
@@ -772,6 +780,7 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, burst_dif
     var predict_description = '<b>' + (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':</b><br/>' +
         '<b>着地予測(10進法):</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
         '<b>着地予測(60進法):</b> ' + latDMS + ', ' + lngDMS + '<br/>' +
+        '<b>上昇速度差:</b> ' + 'σ=' + ascent_diff.toFixed(2) + '<br/>' +
         '<b>バースト高度差:</b> ' + 'σ=' + burst_diff.toFixed(2) + '<br/>' +
         '<b>降下速度差:</b> ' + 'σ=' + descent_diff.toFixed(2) + '<br/>' +
         '<b>着地予定時刻:</b> ' + landing_time + '<br/>' + 
