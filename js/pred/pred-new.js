@@ -742,6 +742,16 @@ function diffToColor(burst_diff, descent_diff) {
 
 function plotMultiplePredictionWithColor(prediction_results, i, color, burst_diff = 0, descent_diff = 0) {
     var latlng = prediction_results.landing.latlng;
+
+    var landing_time = prediction_results.landing.datetime.add(9, 'hours').format("YYYY-MM-DD HH:mm:ss");
+    var flight_time_seconds = prediction_results.flight_time;
+    var flight_time = moment.duration(flight_time_seconds, 'seconds');  // Convert flight time to human-readable format
+
+    // Formatting flight time as hours, minutes, seconds
+    var flight_time_str = flight_time.hours() + '時間 ' + flight_time.minutes() + '分 ' + flight_time.seconds() + '秒';
+
+    
+
     changeRadius = (i === -1 ? 8 : 5 );
     var marker = L.circleMarker(latlng, {
         radius: changeRadius,
@@ -757,12 +767,16 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, burst_dif
 
     var latDMS = toDMS(latlng.lat);  
     var lngDMS = toDMS(latlng.lng); 
-        
+
+       
     var predict_description = '<b>' + (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':</b><br/>' +
         '<b>着地予測(10進法):</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
         '<b>着地予測(60進法):</b> ' + latDMS + ', ' + lngDMS + '<br/>' +
-        '<b>バースト高度差:</b> ' + 'σ=' + burst_diff .toFixed(2) + '<br/>' +
-        '<b>降下速度差:</b> ' + 'σ=' + descent_diff.toFixed(2) + '<br/>';
+        '<b>バースト高度差:</b> ' + 'σ=' + burst_diff.toFixed(2) + '<br/>' +
+        '<b>降下速度差:</b> ' + 'σ=' + descent_diff.toFixed(2) + '<br/>' +
+        '<b>着地予定時刻:</b> ' + landing_time + '<br/>' + 
+        '<b>飛行時間:</b> ' + flight_time_str + '<br/>'; 
+
 
     // Bind popup to the marker
     var landing_popup = new L.popup({
