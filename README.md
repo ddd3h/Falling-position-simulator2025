@@ -6,6 +6,15 @@ CUSFが公開しているサイト(https://predict.sondehub.org/ )を自団体�
 サイトの中身は以下のリンクから確認できます！
 https://wasa-rockoon.github.io/Falling-position-simulator/
 
+##　Upcoming Feature
+今後自分が実装したいものを記入していきます。
+・ガス計算シートの実装
+・CUSFが提供しているAPIの実装
+・リアルタイム予測の対応
+・誤差の修正
+
+要望はXのDMまでお願いします。
+
 ## License
 GNU General Public License
 
