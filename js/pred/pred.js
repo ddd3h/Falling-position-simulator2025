@@ -91,6 +91,8 @@ function readURLParams() {
             launch_moment = moment.utc(launch_datetime);
         }
 
+    
+
         $("#min").val(launch_moment.minutes());
         $("#hour").val(launch_moment.hours());
         $("#day").val(launch_moment.date());

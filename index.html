@@ -328,7 +328,19 @@
             </tr>
             <script>
                 function updateTime() {
-                    const now = new Date();
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const launchDatetime = urlParams.get('launch_datetime');
+            
+                    let now;
+                    if (launchDatetime && launchDatetime !== 'now') {
+                        // リンクから取得した時間を9時間進める
+                        now = new Date(launchDatetime);
+                        now.setHours(now.getHours() + 9);
+                    } else {
+                        // リンクがなければ現在時刻を使用
+                        now = new Date();
+                    }
+            
                     const hours = now.getHours().toString().padStart(2, '0');
                     const minutes = now.getMinutes().toString().padStart(2, '0');
                     const year = now.getFullYear().toString();
