@@ -27,6 +27,27 @@
     <script src="js/colour-map.js" type="text/javascript"></script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+<script>
+// テキストをクリップボードにコピーする関数
+function copyToClipboard(text) {
+    // テキストエリアを作成し、値をセット
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    
+    // テキストエリアを選択してコピー
+    textarea.select();
+    document.execCommand('copy');
+    
+    // テキストエリアを削除
+    document.body.removeChild(textarea);
+    
+    // コピー完了を知らせるアラート
+    alert('クリップボードにコピーしました');
+}
+</script>
+
 </head>
 <body>
 <div id="map_canvas"></div>

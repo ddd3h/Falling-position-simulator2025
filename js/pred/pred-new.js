@@ -915,7 +915,8 @@ function diffToColor(ascent_diff, burst_diff, descent_diff) {
     return 'rgb(' + red + ',' + green + ',' + blue + ')';
 }
 
-function plotMultiplePredictionWithColor(prediction_results, i, color,ascent_diff = 0, burst_diff = 0, descent_diff = 0) {
+// filepath: [pred-new.js](http://_vscodecontentref_/1)
+function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_diff = 0, burst_diff = 0, descent_diff = 0) {
     var latlng = prediction_results.landing.latlng;
 
     var landing_time = prediction_results.landing.datetime.add(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
@@ -924,8 +925,6 @@ function plotMultiplePredictionWithColor(prediction_results, i, color,ascent_dif
 
     // Formatting flight time as hours, minutes, seconds
     var flight_time_str = flight_time.hours() + '時間 ' + flight_time.minutes() + '分 ' + flight_time.seconds() + '秒';
-
-    
 
     changeRadius = (i === -1 ? 8 : 5 );
     var marker = L.circleMarker(latlng, {
@@ -942,19 +941,44 @@ function plotMultiplePredictionWithColor(prediction_results, i, color,ascent_dif
 
     var latDMS = toDMS(latlng.lat);  
     var lngDMS = toDMS(latlng.lng); 
-
+    
+    // プレーンテキストバージョンの予測内容を作成 (クリップボード用)
+    var predict_text = (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':\n' +
+        '着地予測(10進法): ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '\n' +
+        '着地予測(60進法): ' + latDMS + ', ' + lngDMS + '\n' +
+        '上昇速度差: σ=' + ascent_diff.toFixed(2) + '\n' +
+        'バースト高度差: σ=' + burst_diff.toFixed(2) + '\n' +
+        '降下速度差: σ=' + descent_diff.toFixed(2) + '\n' +
+        '着地予定時刻: ' + landing_time + '\n' + 
+        '飛行時間: ' + flight_time_str;
+    
+    // 一意のIDをボタンに割り当て
+    var buttonId = 'copy-btn-' + (i === -1 ? 'central' : i);
        
-    var predict_description = '<b>' + (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':</b><br/>' +
+    // コピーボタン付きの予測内容を作成（inlineのonclickは使わない）
+    var predict_description = 
+        '<div style="position: relative;">' +
+        '<button id="' + buttonId + '" ' +
+        'style="position: absolute; top: 0; right: 0; background: none; border: none; cursor: pointer;" ' +
+        'title="クリップボードにコピー">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">' +
+        '<path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>' +
+        '<path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>' +
+        '</svg>' +
+        '</button>' +
+        '<div>' +
+        '<b>' + (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':</b><br/>' +
         '<b>着地予測(10進法):</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
         '<b>着地予測(60進法):</b> ' + latDMS + ', ' + lngDMS + '<br/>' +
         '<b>上昇速度差:</b> ' + 'σ=' + ascent_diff.toFixed(2) + '<br/>' +
         '<b>バースト高度差:</b> ' + 'σ=' + burst_diff.toFixed(2) + '<br/>' +
         '<b>降下速度差:</b> ' + 'σ=' + descent_diff.toFixed(2) + '<br/>' +
         '<b>着地予定時刻:</b> ' + landing_time + '<br/>' + 
-        '<b>飛行時間:</b> ' + flight_time_str + '<br/>'; 
+        '<b>飛行時間:</b> ' + flight_time_str + '<br/>' +
+        '</div>' +
+        '</div>';
 
-
-    // Bind popup to the marker
+    // ポップアップを作成
     var landing_popup = new L.popup({
         autoClose: false,
         closeOnClick: false,
@@ -962,13 +986,25 @@ function plotMultiplePredictionWithColor(prediction_results, i, color,ascent_dif
     
     marker.bindPopup(landing_popup);
     
-    // Add click event to show/hide flight path
+    // コピーするテキストをマーカーに保存
+    marker.copyText = predict_text;
+    
+    // ポップアップが開かれたときにボタンにイベントハンドラを追加
+    marker.on('popupopen', function(e) {
+        // ボタン要素を取得しクリックイベントを追加
+        setTimeout(function() {
+            var button = document.getElementById(buttonId);
+            if (button) {
+                button.onclick = function() {
+                    copyToClipboard(marker.copyText);
+                };
+            }
+        }, 100); // 少し遅延させてDOMが完全に構築されるのを待つ
+    });
+    
+    // 中心点の場合は自動的にポップアップを開く
     if (i === -1) {
         marker.openPopup();
-    }
-
-    // Automatically show the flight path for the central point
-    if (i === -1) {
         var path_polyline = L.polyline(prediction_results.flight_path, {
             weight: 3,
             color: '#000000'
