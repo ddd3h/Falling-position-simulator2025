@@ -915,7 +915,6 @@ function diffToColor(ascent_diff, burst_diff, descent_diff) {
     return 'rgb(' + red + ',' + green + ',' + blue + ')';
 }
 
-// filepath: [pred-new.js](http://_vscodecontentref_/1)
 function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_diff = 0, burst_diff = 0, descent_diff = 0) {
     var latlng = prediction_results.landing.latlng;
 
@@ -954,8 +953,10 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_di
     
     // 一意のIDをボタンに割り当て
     var buttonId = 'copy-btn-' + (i === -1 ? 'central' : i);
+    var kmlButtonId = 'kml-btn-' + (i === -1 ? 'central' : i);
+    var csvButtonId = 'csv-btn-' + (i === -1 ? 'central' : i);
        
-    // コピーボタン付きの予測内容を作成（inlineのonclickは使わない）
+    // コピーボタン付きの予測内容を作成
     var predict_description = 
         '<div style="position: relative;">' +
         '<button id="' + buttonId + '" ' +
@@ -975,6 +976,10 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_di
         '<b>降下速度差:</b> ' + 'σ=' + descent_diff.toFixed(2) + '<br/>' +
         '<b>着地予定時刻:</b> ' + landing_time + '<br/>' + 
         '<b>飛行時間:</b> ' + flight_time_str + '<br/>' +
+        '<div style="margin-top: 10px;">' +
+        '<button id="' + kmlButtonId + '" style="margin-right: 5px;" class="control_button">KML</button>' +
+        '<button id="' + csvButtonId + '" class="control_button">CSV</button>' +
+        '</div>' +
         '</div>' +
         '</div>';
 
@@ -988,15 +993,39 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_di
     
     // コピーするテキストをマーカーに保存
     marker.copyText = predict_text;
+    marker.prediction = prediction_results;
+    marker.isCenter = (i === -1);
+    marker.markerColor = color;
+    marker.ascent_diff = ascent_diff;
+    marker.burst_diff = burst_diff;
+    marker.descent_diff = descent_diff;
+    marker.markerId = i;
     
     // ポップアップが開かれたときにボタンにイベントハンドラを追加
     marker.on('popupopen', function(e) {
         // ボタン要素を取得しクリックイベントを追加
         setTimeout(function() {
+            // コピーボタンのイベントハンドラ
             var button = document.getElementById(buttonId);
             if (button) {
                 button.onclick = function() {
                     copyToClipboard(marker.copyText);
+                };
+            }
+            
+            // KMLダウンロードボタンのイベントハンドラ
+            var kmlButton = document.getElementById(kmlButtonId);
+            if (kmlButton) {
+                kmlButton.onclick = function() {
+                    downloadSingleMarkerKML(marker);
+                };
+            }
+            
+            // CSVダウンロードボタンのイベントハンドラ
+            var csvButton = document.getElementById(csvButtonId);
+            if (csvButton) {
+                csvButton.onclick = function() {
+                    downloadSingleMarkerCSV(marker);
                 };
             }
         }, 100); // 少し遅延させてDOMが完全に構築されるのを待つ
@@ -1028,6 +1057,180 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_di
             current_marker.flight_path = path_polyline;
         }
     });
+}
+
+// 個別マーカーのKMLをダウンロードする関数
+function downloadSingleMarkerKML(marker) {
+    var prediction = marker.prediction;
+    var isCenter = marker.isCenter;
+    var markerColor = marker.markerColor;
+    var markerId = marker.markerId;
+    
+    // KMLファイルのヘッダー
+    var kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
+    kml += '<Document>\n';
+    kml += '<name>WASA ' + (isCenter ? 'Central' : 'Sample') + ' Prediction</name>\n';
+    kml += '<description>Balloon flight prediction</description>\n';
+    
+    // スタイルの定義
+    kml += '<Style id="landingPoint">\n';
+    kml += '  <IconStyle>\n';
+    kml += '    <color>' + convertColorToKmlFormat(markerColor) + '</color>\n';
+    kml += '    <scale>1.2</scale>\n';
+    kml += '  </IconStyle>\n';
+    kml += '</Style>\n';
+    
+    kml += '<Style id="flightPath">\n';
+    kml += '  <LineStyle>\n';
+    kml += '    <color>ff0000ff</color>\n';
+    kml += '    <width>3</width>\n';
+    kml += '  </LineStyle>\n';
+    kml += '</Style>\n';
+    
+    // 打ち上げ地点のプレースマーク
+    var launch = prediction.launch;
+    kml += '<Placemark>\n';
+    kml += '  <name>Launch</name>\n';
+    kml += '  <description>Launch location: ' + launch.latlng.lat.toFixed(6) + ', ' + launch.latlng.lng.toFixed(6) + '</description>\n';
+    kml += '  <Point>\n';
+    kml += '    <coordinates>' + launch.latlng.lng + ',' + launch.latlng.lat + ',' + launch.latlng.alt + '</coordinates>\n';
+    kml += '  </Point>\n';
+    kml += '</Placemark>\n';
+    
+    // バースト地点のプレースマーク
+    var burst = prediction.burst;
+    kml += '<Placemark>\n';
+    kml += '  <name>Burst</name>\n';
+    kml += '  <description>Burst location at altitude: ' + burst.latlng.alt.toFixed(0) + 'm</description>\n';
+    kml += '  <Point>\n';
+    kml += '    <coordinates>' + burst.latlng.lng + ',' + burst.latlng.lat + ',' + burst.latlng.alt + '</coordinates>\n';
+    kml += '  </Point>\n';
+    kml += '</Placemark>\n';
+    
+    // 着地地点のプレースマーク
+    var landing = prediction.landing;
+    kml += '<Placemark>\n';
+    kml += '  <name>' + (isCenter ? 'Central Landing Point' : 'Sample Landing Point') + '</name>\n';
+    kml += '  <styleUrl>#landingPoint</styleUrl>\n';
+    kml += '  <description>Landing prediction: ' + landing.latlng.lat.toFixed(6) + ', ' + landing.latlng.lng.toFixed(6) + '</description>\n';
+    kml += '  <Point>\n';
+    kml += '    <coordinates>' + landing.latlng.lng + ',' + landing.latlng.lat + ',0</coordinates>\n';
+    kml += '  </Point>\n';
+    kml += '</Placemark>\n';
+    
+    // フライトパスのプレースマーク
+    kml += '<Placemark>\n';
+    kml += '  <name>Flight Path</name>\n';
+    kml += '  <styleUrl>#flightPath</styleUrl>\n';
+    kml += '  <LineString>\n';
+    kml += '    <extrude>1</extrude>\n';
+    kml += '    <tessellate>1</tessellate>\n';
+    kml += '    <altitudeMode>absolute</altitudeMode>\n';
+    kml += '    <coordinates>\n';
+    
+    prediction.flight_path.forEach(function(point) {
+        kml += '      ' + point[1] + ',' + point[0] + ',' + point[2] + '\n';
+    });
+    
+    kml += '    </coordinates>\n';
+    kml += '  </LineString>\n';
+    kml += '</Placemark>\n';
+    
+    // KMLのフッター
+    kml += '</Document>\n';
+    kml += '</kml>';
+    
+    // ダウンロードファイル名の作成
+    var filename = 'balloon_prediction_' + (isCenter ? 'central' : 'sample_' + markerId) + '_' + 
+                   new Date().toISOString().split('T')[0] + '.kml';
+    
+    // KMLファイルのダウンロード
+    downloadFile(kml, filename, 'application/vnd.google-earth.kml+xml');
+}
+
+// 個別マーカーのCSVをダウンロードする関数
+function downloadSingleMarkerCSV(marker) {
+    var prediction = marker.prediction;
+    var isCenter = marker.isCenter;
+    var markerId = marker.markerId;
+    var ascent_diff = marker.ascent_diff;
+    var burst_diff = marker.burst_diff;
+    var descent_diff = marker.descent_diff;
+    
+    // CSVヘッダー
+    var csv = 'Type,Time (UTC),Latitude,Longitude,Altitude (m)\n';
+    
+    // 打ち上げ、バースト、着地のポイント情報
+    csv += 'Launch,' + prediction.launch.datetime.format() + ',' + 
+           prediction.launch.latlng.lat.toFixed(6) + ',' + 
+           prediction.launch.latlng.lng.toFixed(6) + ',' + 
+           prediction.launch.latlng.alt.toFixed(1) + '\n';
+           
+    csv += 'Burst,' + prediction.burst.datetime.format() + ',' + 
+           prediction.burst.latlng.lat.toFixed(6) + ',' + 
+           prediction.burst.latlng.lng.toFixed(6) + ',' + 
+           prediction.burst.latlng.alt.toFixed(1) + '\n';
+           
+    csv += 'Landing,' + prediction.landing.datetime.format() + ',' + 
+           prediction.landing.latlng.lat.toFixed(6) + ',' + 
+           prediction.landing.latlng.lng.toFixed(6) + ',0\n';
+    
+    // 空の行を追加
+    csv += '\n';
+    
+    // フライトパスの詳細情報
+    csv += 'Flight Path Points:\n';
+    csv += 'Index,Latitude,Longitude,Altitude (m)\n';
+    
+    prediction.flight_path.forEach(function(point, index) {
+        csv += index + ',' + point[0].toFixed(6) + ',' + point[1].toFixed(6) + ',' + point[2].toFixed(1) + '\n';
+    });
+    
+    // Gaussian分布のパラメータ情報（サンプル点の場合）
+    if (!isCenter) {
+        csv += '\nGaussian Distribution Parameters:\n';
+        csv += 'Ascent Rate Difference (σ),' + ascent_diff.toFixed(2) + '\n';
+        csv += 'Burst Altitude Difference (σ),' + burst_diff.toFixed(2) + '\n';
+        csv += 'Descent Rate Difference (σ),' + descent_diff.toFixed(2) + '\n';
+    }
+    
+    // ダウンロードファイル名の作成
+    var filename = 'balloon_prediction_' + (isCenter ? 'central' : 'sample_' + markerId) + '_' + 
+                   new Date().toISOString().split('T')[0] + '.csv';
+    
+    // CSVファイルのダウンロード
+    downloadFile(csv, filename, 'text/csv');
+}
+
+// ファイルをダウンロードする汎用関数
+function downloadFile(content, filename, mimeType) {
+    var blob = new Blob([content], {type: mimeType});
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+// RGBカラーをKML形式に変換する関数
+function convertColorToKmlFormat(colorStr) {
+    // RGB形式 'rgb(255, 0, 0)' からKML形式 'ff0000ff' (ABGR)に変換
+    if (colorStr.startsWith('rgb')) {
+        var rgb = colorStr.match(/\d+/g);
+        if (rgb && rgb.length === 3) {
+            var r = parseInt(rgb[0]).toString(16).padStart(2, '0');
+            var g = parseInt(rgb[1]).toString(16).padStart(2, '0');
+            var b = parseInt(rgb[2]).toString(16).padStart(2, '0');
+            return 'ff' + b + g + r; // KMLはABGR形式
+        }
+    }
+    // 色が指定されていない場合のデフォルト
+    return 'ff0000ff'; // 赤色 (ABGR)
 }
 
 function toDMS(deg) {
