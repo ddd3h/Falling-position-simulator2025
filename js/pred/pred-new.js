@@ -669,6 +669,12 @@ function plotGaussianDistribution(settings, extra_settings) {
     var burst_altitudes = [];
     var descent_rates = [];
 
+    // Store all landing points for KML/CSV export
+    var all_landing_points = [];
+    var all_prediction_results = [];
+    var completedRequests = 0;
+    var totalRequests = 101; // 100 samples + 1 central point
+
     var ascent_std_dev = 0.5;  // ±0.5 m/s for ascent rate
     var burst_std_dev = burst_altitude * 0.05; // ±5% of burst altitude
     var descent_std_dev = 0.5;  // ±0.5 m/s for descent rate
@@ -695,7 +701,25 @@ function plotGaussianDistribution(settings, extra_settings) {
             central_point = parsePrediction(data.prediction).landing.latlng;
 
             var central_prediction_results = parsePrediction(data.prediction);
+            all_prediction_results.push({
+                result: central_prediction_results,
+                color: 'red',
+                isCentral: true,
+                ascent: ascent_rate,
+                burst: burst_altitude,
+                descent: descent_rate
+            });
+            all_landing_points.push({
+                latlng: central_point,
+                color: 'red',
+                isCentral: true,
+                ascent: ascent_rate,
+                burst: burst_altitude,
+                descent: descent_rate
+            });
+            
             plotMultiplePredictionWithColor(central_prediction_results, -1, 'red'); // -1は中央点を示す
+            completedRequests++;
 
             // Plot the distributions on the map
             var landing_points = [];
@@ -715,20 +739,163 @@ function plotGaussianDistribution(settings, extra_settings) {
                         var ascent_diff = Math.abs(ascent_rates[i] - ascent_rate)/ ascent_std_dev;
                         var burst_diff = Math.abs(burst_altitudes[i] - burst_altitude) / burst_std_dev;
                         var descent_diff = Math.abs(descent_rates[i] - descent_rate) / descent_std_dev;
-                        // Map distance to a color (red at center, blue farther away)
+                        // Map distance to a color
                         var color = diffToColor(ascent_diff, burst_diff, descent_diff);
-            
+                        
+                        // Store for export
+                        all_prediction_results.push({
+                            result: prediction_results,
+                            color: color,
+                            isCentral: false,
+                            ascent: ascent_rates[i],
+                            burst: burst_altitudes[i],
+                            descent: descent_rates[i]
+                        });
+                        all_landing_points.push({
+                            latlng: landing_point,
+                            color: color,
+                            isCentral: false,
+                            ascent: ascent_rates[i],
+                            burst: burst_altitudes[i],
+                            descent: descent_rates[i]
+                        });
+                        
                         // Plot each prediction result with color
                         plotMultiplePredictionWithColor(prediction_results, i, color, ascent_diff, burst_diff, descent_diff);
+                        
+                        completedRequests++;
+                        
+                        // When all predictions are complete, enable download buttons
+                        if (completedRequests >= totalRequests) {
+                            enableGaussianDownloads(all_landing_points, all_prediction_results);
+                        }
                     })
                     .fail(function (data) {
                         console.error("Prediction failed for Gaussian sample");
+                        completedRequests++;
+                        
+                        // Even if some fail, enable downloads when all requests are processed
+                        if (completedRequests >= totalRequests) {
+                            enableGaussianDownloads(all_landing_points, all_prediction_results);
+                        }
                     });
             }
         })
         .fail(function (data) {
             console.error("Central point prediction failed");
+            completedRequests++;
         });
+}
+
+// Add new functions for KML and CSV generation for Gaussian distribution
+function enableGaussianDownloads(landingPoints, predictionResults) {
+    // First clean up any existing download buttons
+    $('#gaussian-download-container').remove();
+    
+    // Add download buttons in same style and location as other prediction types
+    var container = $('<div id="gaussian-download-container" class="panel-body"></div>');
+    
+    var kmlBtn = $('<a id="gaussian-download-kml" class="btn btn-default">Download KML</a>');
+    var csvBtn = $('<a id="gaussian-download-csv" class="btn btn-default">Download CSV</a>');
+    
+    container.append(kmlBtn).append(' ').append(csvBtn);
+    
+    // Insert the container at the same location as other downloads
+    $('#downloads').append(container);
+    
+    // Add click handlers
+    $('#gaussian-download-kml').off('click').on('click', function(e) {
+        e.preventDefault();
+        downloadGaussianKML(landingPoints, predictionResults);
+    });
+    
+    $('#gaussian-download-csv').off('click').on('click', function(e) {
+        e.preventDefault();
+        downloadGaussianCSV(landingPoints, predictionResults);
+    });
+    
+    // Show the download section if it was hidden
+    $('#downloads').show();
+}
+
+function downloadGaussianKML(landingPoints, predictionResults) {
+    var kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
+    kml += '<Document>\n';
+    kml += '<name>WASA Gaussian Distribution Prediction</name>\n';
+    
+    // Add style for central point
+    kml += '<Style id="centralPoint">\n';
+    kml += '  <IconStyle>\n';
+    kml += '    <color>ff0000ff</color>\n';
+    kml += '    <scale>1.2</scale>\n';
+    kml += '  </IconStyle>\n';
+    kml += '</Style>\n';
+    
+    // Add style for other points
+    kml += '<Style id="samplePoint">\n';
+    kml += '  <IconStyle>\n';
+    kml += '    <scale>0.8</scale>\n';
+    kml += '  </IconStyle>\n';
+    kml += '</Style>\n';
+    
+    // Add points
+    landingPoints.forEach(function(point, index) {
+        var styleUrl = point.isCentral ? "#centralPoint" : "#samplePoint";
+        var name = point.isCentral ? "Central Landing Point" : "Sample Landing Point " + index;
+        var description = "Ascent Rate: " + point.ascent.toFixed(2) + " m/s<br/>" +
+                         "Burst Altitude: " + point.burst.toFixed(2) + " m<br/>" +
+                         "Descent Rate: " + point.descent.toFixed(2) + " m/s";
+        
+        kml += '<Placemark>\n';
+        kml += '  <name>' + name + '</name>\n';
+        kml += '  <description><![CDATA[' + description + ']]></description>\n';
+        kml += '  <styleUrl>' + styleUrl + '</styleUrl>\n';
+        kml += '  <Point>\n';
+        kml += '    <coordinates>' + point.latlng.lng + ',' + point.latlng.lat + ',0</coordinates>\n';
+        kml += '  </Point>\n';
+        kml += '</Placemark>\n';
+    });
+    
+    kml += '</Document>\n';
+    kml += '</kml>';
+    
+    // Create download link
+    var blob = new Blob([kml], {type: 'application/vnd.google-earth.kml+xml'});
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = 'gaussian_prediction_' + new Date().toISOString().split('T')[0] + '.kml';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function downloadGaussianCSV(landingPoints, predictionResults) {
+    var csv = 'Type,Latitude,Longitude,Ascent Rate (m/s),Burst Altitude (m),Descent Rate (m/s),Color\n';
+    
+    landingPoints.forEach(function(point) {
+        var type = point.isCentral ? "Central" : "Sample";
+        csv += type + ',' +
+               point.latlng.lat + ',' +
+               point.latlng.lng + ',' +
+               point.ascent.toFixed(2) + ',' +
+               point.burst.toFixed(2) + ',' +
+               point.descent.toFixed(2) + ',' +
+               point.color + '\n';
+    });
+    
+    // Create download link
+    var blob = new Blob([csv], {type: 'text/csv'});
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = 'gaussian_prediction_' + new Date().toISOString().split('T')[0] + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
 }
 
 function gaussianRandom(mean, stdDev) {
