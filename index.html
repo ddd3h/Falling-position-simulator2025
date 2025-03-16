@@ -292,9 +292,9 @@
         <tr>
             <td>緯度/経度(10進法):</td>
             <td>
-                <input id="lat" type="text" size="8" name="lat" value="33.13492" 
+                <input id="lat" type="text" size="8" name="lat" value="47.895561" 
                     onKeyDown="SetSiteOther()">&nbsp;/&nbsp;
-                <input id="lon" type="text" size="8" name="lon" value="132.50477" 
+                <input id="lon" type="text" size="8" name="lon" value="106.948936" 
                     onKeyDown="SetSiteOther()">
             </td>
         </tr>
@@ -319,7 +319,7 @@
             </td>
         </tr>
         <tr>
-            <td>打ち上げ時間 (JST):</td>
+            <td>打ち上げ時間 (MST):</td>
             <td>
                 <input id="hour" type="text" name="hour" value="" maxlength="2" size="2" style="width: 1.5em;"> :
                 <input id="min" type="text" name="min" value="" maxlength="2" size="2" style="width: 1.5em;">
@@ -335,7 +335,7 @@
                     if (launchDatetime && launchDatetime !== 'now') {
                         // リンクから取得した時間を9時間進める
                         now = new Date(launchDatetime);
-                        now.setHours(now.getHours() + 9);
+                        now.setHours(now.getHours() + 8);
                     } else {
                         // リンクがなければ現在時刻を使用
                         now = new Date();

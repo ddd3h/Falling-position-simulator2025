@@ -47,8 +47,8 @@ function runPrediction(){
     var minute = $('#min').val();
 
     // Months are zero-indexed in Javascript. Wat.
-    var launch_time_plus_9_hours = moment.utc([year, month-1, day, hour, minute, 0, 0]);
-    var launch_time = launch_time_plus_9_hours.subtract(9, 'hours');
+    var launch_time_plus_8_hours = moment.utc([year, month-1, day, hour, minute, 0, 0]);
+    var launch_time = launch_time_plus_8_hours.subtract(8, 'hours');
     run_settings.launch_datetime = launch_time.format();
     extra_settings.launch_moment = launch_time;
 
@@ -751,7 +751,7 @@ function diffToColor(ascent_diff, burst_diff, descent_diff) {
 function plotMultiplePredictionWithColor(prediction_results, i, color,ascent_diff = 0, burst_diff = 0, descent_diff = 0) {
     var latlng = prediction_results.landing.latlng;
 
-    var landing_time = prediction_results.landing.datetime.add(9, 'hours').format("YYYY-MM-DD HH:mm:ss");
+    var landing_time = prediction_results.landing.datetime.add(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
     var flight_time_seconds = prediction_results.flight_time;
     var flight_time = moment.duration(flight_time_seconds, 'seconds');  // Convert flight time to human-readable format
 
