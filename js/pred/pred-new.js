@@ -653,6 +653,9 @@ function clearMarkers() {
         if (marker.flight_path) {
             map.removeLayer(marker.flight_path);
         }
+        if (marker.burst_marker) {
+            map.removeLayer(marker.burst_marker);
+        }
     });
     markers = []; 
 }
@@ -916,8 +919,11 @@ function diffToColor(ascent_diff, burst_diff, descent_diff) {
 }
 
 function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_diff = 0, burst_diff = 0, descent_diff = 0) {
+    var launch = prediction_results.launch;
+    var landing = prediction_results.landing;
+    var burst = prediction_results.burst;
     var latlng = prediction_results.landing.latlng;
-
+    
     var landing_time = prediction_results.landing.datetime.add(8, 'hours').format("YYYY-MM-DD HH:mm:ss");
     var flight_time_seconds = prediction_results.flight_time;
     var flight_time = moment.duration(flight_time_seconds, 'seconds');  // Convert flight time to human-readable format
@@ -1041,20 +1047,49 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_di
         marker.flight_path = path_polyline;
     }
 
-    marker.on('click', function(e) {
-        var current_marker = e.target;
+    // バーストアイコンを作成
+    var burst_icon = L.icon({
+        iconUrl: burst_img,
+        iconSize: [16,16],
+        iconAnchor: [8,8]
+    });
+    
+    // バーストマーカーを追加 (すべての予測点に対して)
+    var burst_marker = L.marker(
+        burst.latlng,
+        {
+            title: 'Balloon burst ('+burst.latlng.lat.toFixed(4)+', '+burst.latlng.lng.toFixed(4)+ 
+            ' at altitude ' + burst.latlng.alt.toFixed(0) + ') at ' 
+            + burst.datetime.format("HH:mm") + " UTC",
+            icon: burst_icon
+        }
+    ).addTo(map);
+    marker.burst_marker = burst_marker;
+    markers.push(burst_marker);
 
-        if (current_marker.flight_path) {
-            // If flight path exists, remove it
-            map.removeLayer(current_marker.flight_path);
-            current_marker.flight_path = null;
+    var path_polyline = L.polyline(
+        prediction_results.flight_path,
+        { weight: 3, color: '#000000' }
+    );
+
+    if (i !== -1) {
+        map.removeLayer(burst_marker); 
+    } else {
+        path_polyline.addTo(map); 
+    }
+
+    marker.flight_path = path_polyline;
+    marker.burst_marker = burst_marker;
+
+    marker.on('click', function(e) {
+        if (map.hasLayer(marker.burst_marker)) {
+            map.removeLayer(marker.burst_marker);
+            if (map.hasLayer(marker.flight_path)) {
+                map.removeLayer(marker.flight_path);
+            }
         } else {
-            // Generate and show flight path when clicked
-            var path_polyline = L.polyline(prediction_results.flight_path, {
-                weight: 3,
-                color: '#000000'
-            }).addTo(map);
-            current_marker.flight_path = path_polyline;
+            map.addLayer(marker.burst_marker);
+            map.addLayer(marker.flight_path);
         }
     });
 }
