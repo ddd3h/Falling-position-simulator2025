@@ -1287,3 +1287,70 @@ function toDMS(deg) {
 
     return d + "°" + m + "'" + s + "\"";
 }
+
+$(document).ready(function(){
+    initCustomPlotUI();
+});
+
+function initCustomPlotUI(){
+    // Create container with absolute positioning at the bottom-left
+    let container = $('<div/>', {
+        id: 'custom_plot',
+        css: {
+            position: 'absolute',
+            bottom: '30px',
+            left: '10px',
+            padding: '10px',
+            background: 'white',
+            border: '1px solid #ccc',
+            'z-index': 9999
+        }
+    }).appendTo('body');
+
+    // Add form fields
+    container.append('Lat: <input type="text" id="c_lat" size="7"/><br/>');
+    container.append('Lon: <input type="text" id="c_lon" size="7"/><br/>');
+    container.append('Alt: <input type="text" id="c_alt" size="7"/><br/>');
+    container.append('Time: <input type="text" id="c_time" size="7"/><br/>');
+    container.append('<button id="plotBtn">Plot</button>');
+
+    // Bind click
+    $('#plotBtn').click(function(){
+        plotCustomPoint();
+    });
+
+    var mainYear = parseInt($('#year').val());
+    var mainMonth = parseInt($('#month').val());
+    var mainDay = parseInt($('#day').val());
+    var mainHour = parseInt($('#hour').val());
+    var mainMin = parseInt($('#min').val());
+    if(!isNaN(mainYear) && !isNaN(mainMonth) && !isNaN(mainDay) && !isNaN(mainHour) && !isNaN(mainMin)){
+        var defaultTime = moment.utc([mainYear, mainMonth - 1, mainDay, mainHour, mainMin, 0, 0]);
+        $('#c_time').val(defaultTime.format("YYYY-MM-DD HH:mm:ss"));
+    }
+}
+
+function plotCustomPoint(){
+    // Get values
+    let lat = parseFloat($('#c_lat').val());
+    let lon = parseFloat($('#c_lon').val());
+    let alt = parseFloat($('#c_alt').val());
+    let time = $('#c_time').val();
+
+    if(isNaN(lat) || isNaN(lon)){
+        alert('Invalid Lat/Lon!');
+        return;
+    }
+
+    // Place marker
+    let marker = L.marker([lat, lon], {
+        title: 'Custom Point: ' + alt + 'm at ' + time
+    }).addTo(map);
+
+    // Optionally pan/zoom to the new marker
+    map.setView([lat, lon], 10);
+
+    appendDebug('Plotted custom point at: ' + lat + ', ' + lon + ' alt:' + alt + ' time:' + time);
+
+    marker.bindPopup("Altitude: " + alt + "m, Time: " + time);
+}
