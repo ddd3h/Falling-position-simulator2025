@@ -1120,7 +1120,7 @@ function downloadSingleMarkerKML(marker) {
     kml += '  <LineStyle>\n';
     kml += '    <color>ff0000ff</color>\n';
     kml += '    <width>3</width>\n';
-    kml += '  </LineStyle>\n';
+    kml += '</LineStyle>\n';
     kml += '</Style>\n';
     
     // 打ち上げ地点のプレースマーク
@@ -1298,6 +1298,11 @@ var customTimeLocked = false;
 // Track custom point markers separately from prediction markers
 var customPointMarkers = [];
 
+// Add this function to check if the user is online
+function isOnline() {
+    return navigator.onLine;
+}
+
 function initCustomPlotUI(){
     // Create container with absolute positioning at the bottom-left
     let container = $('<div/>', {
@@ -1313,8 +1318,8 @@ function initCustomPlotUI(){
         }
     }).appendTo('body');
 
-    // Add title
-    container.append('<b>Plot your own points</b><br/>');
+    // Add title with online status indicator
+    container.append('<b>Plot your own points</b> <span id="connection_status"></span><br/>');
     
     // Add form fields
     container.append('Lat: <input type="text" id="c_lat" size="7"/><br/>');
@@ -1343,6 +1348,16 @@ function initCustomPlotUI(){
         }
     }, 1000);
 
+    // Update connection status
+    updateConnectionStatus();
+    
+    // Listen for online/offline events
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    
+    // Check periodically for connection changes
+    setInterval(updateConnectionStatus, 5000);
+
     var mainYear = parseInt($('#year').val());
     var mainMonth = parseInt($('#month').val());
     var mainDay = parseInt($('#day').val());
@@ -1352,6 +1367,45 @@ function initCustomPlotUI(){
         var defaultTime = moment.utc([mainYear, mainMonth - 1, mainDay, mainHour, mainMin, 0, 0]);
         $('#c_time').val(defaultTime.format("YYYY-MM-DD HH:mm:ss"));
     }
+}
+
+// Function to update connection status display
+function updateConnectionStatus() {
+    var online = isOnline();
+    if (online) {
+        $('#connection_status').html('<span style="color: green;">[オンライン]</span>');
+    } else {
+        $('#connection_status').html('<span style="color: #FF6600;">[オフライン]</span>');
+    }
+    
+    // For any existing custom point popups, update their status
+    customPointMarkers.forEach(function(marker) {
+        if (marker.isPopupOpen()) {
+            var popup = marker.getPopup();
+            var $content = $(popup._contentNode);
+            var $predictBtn = $content.find('.predict-btn');
+            
+            if (online) {
+                $predictBtn.prop('disabled', false).css({
+                    'opacity': '1',
+                    'cursor': 'pointer'
+                }).removeAttr('title');
+                $content.find('.offline-warning').remove();
+            } else {
+                $predictBtn.prop('disabled', true).css({
+                    'opacity': '0.5',
+                    'cursor': 'not-allowed'
+                }).attr('title', 'オフライン時は予測機能を使用できません');
+                
+                if ($content.find('.offline-warning').length === 0) {
+                    $content.find('p').after(
+                        "<div class='offline-warning' style='color: #FF6600; margin-bottom: 8px; font-weight: bold;'>" +
+                        "⚠️ オフラインモード: 予測機能は使用できません</div>"
+                    );
+                }
+            }
+        }
+    });
 }
 
 function updateCustomTime() {
@@ -1397,13 +1451,24 @@ function plotCustomPoint(){
         title: 'Custom Point: ' + alt + 'm at ' + time
     }).addTo(map);
 
+    // Check online status to determine popup content
+    let online = isOnline();
+    
     // Create popup content with buttons
+    // If offline, show warning and disable predict button
     let popupContent = 
         "<div>" +
         "<p><b>Altitude:</b> " + alt + "m<br/>" +
-        "<b>Time:</b> " + time + "</p>" +
-        "<button class='predict-btn'>Predict from here</button> " +
-        "<button class='delete-btn'>Delete point</button>" +
+        "<b>Time:</b> " + time + "</p>";
+        
+    if (!online) {
+        popupContent += "<div style='color: #FF6600; margin-bottom: 8px; font-weight: bold;'>⚠️ オフラインモード: 予測機能は使用できません</div>";
+        popupContent += "<button class='predict-btn' disabled style='opacity: 0.5; cursor: not-allowed;' title='オフライン時は予測機能を使用できません'>Predict from here</button> ";
+    } else {
+        popupContent += "<button class='predict-btn'>Predict from here</button> ";
+    }
+    
+    popupContent += "<button class='delete-btn'>Delete point</button>" +
         "</div>";
     
     // Create and bind popup
@@ -1423,10 +1488,34 @@ function plotCustomPoint(){
     
     // Add event listeners after popup is opened
     marker.on('popupopen', function() {
-        $('.predict-btn').click(function() {
-            runCustomPointPrediction(marker);
-        });
+        // Update online status each time popup is opened
+        let currentlyOnline = isOnline();
         
+        // Predict button should only work if online
+        if (currentlyOnline) {
+            $('.predict-btn').click(function() {
+                runCustomPointPrediction(marker);
+            });
+        } else {
+            // If the user is offline but the popup was created when online
+            // Update the button state to reflect current status
+            if (!$('.predict-btn').prop('disabled')) {
+                $('.predict-btn').prop('disabled', true).css({
+                    'opacity': '0.5',
+                    'cursor': 'not-allowed'
+                }).attr('title', 'オフライン時は予測機能を使用できません');
+                
+                // Add warning if it doesn't exist yet
+                if ($('.offline-warning').length === 0) {
+                    $(popup._contentNode).find('p').after(
+                        "<div class='offline-warning' style='color: #FF6600; margin-bottom: 8px; font-weight: bold;'>" +
+                        "⚠️ オフラインモード: 予測機能は使用できません</div>"
+                    );
+                }
+            }
+        }
+        
+        // Delete button works regardless of connection status
         $('.delete-btn').click(function() {
             deleteCustomPoint(marker);
         });
@@ -1435,7 +1524,8 @@ function plotCustomPoint(){
     // Optionally pan/zoom to the new marker
     map.setView([lat, lon], 10);
 
-    appendDebug('Plotted custom point at: ' + lat + ', ' + lon + ' alt:' + alt + ' time:' + time);
+    appendDebug('Plotted custom point at: ' + lat + ', ' + lon + ' alt:' + alt + ' time:' + time + 
+                (online ? '' : ' (offline mode)'));
 }
 
 function deleteCustomPoint(marker) {
@@ -1457,6 +1547,12 @@ function deleteCustomPoint(marker) {
 }
 
 function runCustomPointPrediction(marker) {
+    // Double-check online status before attempting prediction
+    if (!isOnline()) {
+        alert('オフライン時は予測機能を使用できません。インターネット接続を確認してください。');
+        return;
+    }
+    
     // Get settings from the marker
     let customLat = marker.customData.lat;
     let customLon = marker.customData.lon;
