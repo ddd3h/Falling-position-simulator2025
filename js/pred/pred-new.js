@@ -1160,7 +1160,7 @@ function downloadSingleMarkerKML(marker) {
     kml += '  <styleUrl>#flightPath</styleUrl>\n';
     kml += '  <LineString>\n';
     kml += '    <extrude>1</extrude>\n';
-    kml += '    <tessellate>1</tessellate>\n';
+    kml += '    <tessellate>1</tessate>\n';
     kml += '    <altitudeMode>absolute</altitudeMode>\n';
     kml += '    <coordinates>\n';
     
@@ -1292,6 +1292,12 @@ $(document).ready(function(){
     initCustomPlotUI();
 });
 
+// Track if time field has been manually changed
+var customTimeLocked = false;
+
+// Track custom point markers separately from prediction markers
+var customPointMarkers = [];
+
 function initCustomPlotUI(){
     // Create container with absolute positioning at the bottom-left
     let container = $('<div/>', {
@@ -1307,17 +1313,35 @@ function initCustomPlotUI(){
         }
     }).appendTo('body');
 
+    // Add title
+    container.append('<b>Plot your own points</b><br/>');
+    
     // Add form fields
     container.append('Lat: <input type="text" id="c_lat" size="7"/><br/>');
     container.append('Lon: <input type="text" id="c_lon" size="7"/><br/>');
-    container.append('Alt: <input type="text" id="c_alt" size="7"/><br/>');
-    container.append('Time: <input type="text" id="c_time" size="7"/><br/>');
+    container.append('Alt: <input type="text" id="c_alt" size="7"/>(ｍ)<br/>');
+    container.append('Time: <input type="text" id="c_time" size="14"/><br/>');
     container.append('<button id="plotBtn">Plot</button>');
 
     // Bind click
     $('#plotBtn').click(function(){
         plotCustomPoint();
     });
+
+    // Initialize with the current time
+    updateCustomTime();
+    
+    // Add event listener to detect manual changes
+    $('#c_time').on('input', function() {
+        customTimeLocked = true;
+    });
+    
+    // Update time every second if not manually changed
+    setInterval(function() {
+        if (!customTimeLocked) {
+            updateCustomTime();
+        }
+    }, 1000);
 
     var mainYear = parseInt($('#year').val());
     var mainMonth = parseInt($('#month').val());
@@ -1330,11 +1354,37 @@ function initCustomPlotUI(){
     }
 }
 
+function updateCustomTime() {
+    // Match the behavior of the updateTime() function in index.html
+    const urlParams = new URLSearchParams(window.location.search);
+    const launchDatetime = urlParams.get('launch_datetime');
+    
+    let now;
+    if (launchDatetime && launchDatetime !== 'now') {
+        // Get the time from URL and advance by 8 hours to match MST
+        now = new Date(launchDatetime);
+        now.setHours(now.getHours() + 8);
+    } else {
+        // Otherwise use current time
+        now = new Date();
+    }
+    
+    // Format the date to YYYY-MM-DD HH:mm:ss format
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    $('#c_time').val(`${year}-${month}-${day} ${hours}:${minutes}:${seconds}`);
+}
+
 function plotCustomPoint(){
     // Get values
     let lat = parseFloat($('#c_lat').val());
     let lon = parseFloat($('#c_lon').val());
-    let alt = parseFloat($('#c_alt').val());
+    let alt = parseFloat($('#c_alt').val() || 0);
     let time = $('#c_time').val();
 
     if(isNaN(lat) || isNaN(lon)){
@@ -1347,10 +1397,263 @@ function plotCustomPoint(){
         title: 'Custom Point: ' + alt + 'm at ' + time
     }).addTo(map);
 
+    // Create popup content with buttons
+    let popupContent = 
+        "<div>" +
+        "<p><b>Altitude:</b> " + alt + "m<br/>" +
+        "<b>Time:</b> " + time + "</p>" +
+        "<button class='predict-btn'>Predict from here</button> " +
+        "<button class='delete-btn'>Delete point</button>" +
+        "</div>";
+    
+    // Create and bind popup
+    let popup = L.popup().setContent(popupContent);
+    marker.bindPopup(popup);
+    
+    // Store marker data
+    marker.customData = {
+        lat: lat,
+        lon: lon,
+        alt: alt,
+        time: time
+    };
+    
+    // Add to custom markers collection
+    customPointMarkers.push(marker);
+    
+    // Add event listeners after popup is opened
+    marker.on('popupopen', function() {
+        $('.predict-btn').click(function() {
+            runCustomPointPrediction(marker);
+        });
+        
+        $('.delete-btn').click(function() {
+            deleteCustomPoint(marker);
+        });
+    });
+
     // Optionally pan/zoom to the new marker
     map.setView([lat, lon], 10);
 
     appendDebug('Plotted custom point at: ' + lat + ', ' + lon + ' alt:' + alt + ' time:' + time);
+}
 
-    marker.bindPopup("Altitude: " + alt + "m, Time: " + time);
+function deleteCustomPoint(marker) {
+    // First, remove any associated prediction
+    if (marker.customPrediction) {
+        removeCustomPrediction(marker);
+    }
+    
+    // Remove marker from map
+    map.removeLayer(marker);
+    
+    // Remove from array
+    let index = customPointMarkers.indexOf(marker);
+    if (index > -1) {
+        customPointMarkers.splice(index, 1);
+    }
+    
+    appendDebug('Deleted custom point and any associated prediction');
+}
+
+function runCustomPointPrediction(marker) {
+    // Get settings from the marker
+    let customLat = marker.customData.lat;
+    let customLon = marker.customData.lon;
+    let customAlt = marker.customData.alt;
+    
+    // Parse the time from the marker
+    let customTimeStr = marker.customData.time;
+    let customTime;
+    
+    try {
+        // Try to parse the time string to a moment object - use specific format
+        customTime = moment(customTimeStr, "YYYY-MM-DD HH:mm:ss");
+        if (!customTime.isValid()) {
+            throw new Error("Invalid time format");
+        }
+        
+        // Make sure we're working with UTC time to match the main prediction
+        customTime = moment.utc(customTime);
+        
+    } catch (e) {
+        alert("Invalid time format. Using current time instead.");
+        customTime = moment.utc(); // Make sure to use UTC
+    }
+    
+    // Create settings object (similar to main prediction)
+    let run_settings = {};
+    let extra_settings = {};
+    
+    // Get flight profile and other settings from main form
+    run_settings.profile = $('#flight_profile').val();
+    run_settings.pred_type = 'single'; // Always do single prediction for custom points
+    
+    // Use custom launch parameters
+    run_settings.launch_latitude = customLat;
+    run_settings.launch_longitude = customLon;
+    // Handle negative longitudes - Tawhiri wants longitudes between 0-360
+    if (run_settings.launch_longitude < 0.0) {
+        run_settings.launch_longitude += 360.0;
+    }
+    run_settings.launch_altitude = customAlt;
+    
+    // Get other settings from main form
+    run_settings.ascent_rate = parseFloat($('#ascent').val());
+
+    // Build date components - similar to how the main prediction does it
+    let year = customTime.year();
+    let month = customTime.month(); // month is zero-indexed in moment.js
+    let day = customTime.date();
+    let hour = customTime.hours();
+    let minute = customTime.minutes();
+
+    // Create a proper UTC time using the same approach as the main prediction
+    let launch_time = moment.utc([year, month, day, hour, minute, 0, 0]).subtract(8, 'hours');
+    run_settings.launch_datetime = launch_time.format();
+    extra_settings.launch_moment = launch_time;
+    
+    if (run_settings.profile == "standard_profile") {
+        run_settings.burst_altitude = parseFloat($('#burst').val());
+        run_settings.descent_rate = parseFloat($('#drag').val());
+    } else {
+        run_settings.float_altitude = parseFloat($('#burst').val());
+        run_settings.stop_datetime = moment(launch_time).add(1, 'days').format();
+    }
+    
+    // Run custom prediction
+    appendDebug('Running prediction from custom point: ' + customLat + ', ' + customLon + ' at ' + run_settings.launch_datetime);
+    customPointPredictionRequest(run_settings, extra_settings, marker);
+}
+
+function customPointPredictionRequest(settings, extra_settings, sourceMarker) {
+    $.get(tawhiri_api, settings)
+        .done(function(data) {
+            processCustomPointPrediction(data, settings, sourceMarker);
+        })
+        .fail(function(data) {
+            var prediction_error = "Custom point prediction failed. Tawhiri may be under heavy load, please try again.";
+            if(data.hasOwnProperty("responseJSON")) {
+                prediction_error += data.responseJSON.error.description;
+            }
+            alert(prediction_error);
+        });
+}
+
+function processCustomPointPrediction(data, settings, sourceMarker) {
+    if(data.hasOwnProperty('error')){
+        alert("Custom point predictor returned error: " + data.error.description);
+        return;
+    }
+    
+    var prediction_results = parsePrediction(data.prediction);
+    plotCustomPointPrediction(prediction_results, sourceMarker);
+}
+
+function plotCustomPointPrediction(prediction, sourceMarker) {
+    var launch = prediction.launch;
+    var landing = prediction.landing;
+    var burst = prediction.burst;
+
+    // Create markers with different styling for custom prediction
+    var customLaunchIcon = L.icon({
+        iconUrl: launch_img,
+        iconSize: [10, 10],
+        iconAnchor: [5, 5]
+    });
+
+    var customLandIcon = L.icon({
+        iconUrl: land_img,
+        iconSize: [10, 10],
+        iconAnchor: [5, 5]
+    });
+
+    var customBurstIcon = L.icon({
+        iconUrl: burst_img,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+
+    // Create custom path with different color
+    var customPathPolyline = L.polyline(
+        prediction.flight_path,
+        {
+            weight: 3,
+            color: '#0000FF', // Blue line for custom prediction
+            opacity: 0.7
+        }
+    ).addTo(map);
+    
+    // Add markers
+    var customLandMarker = L.marker(
+        landing.latlng,
+        {
+            title: 'Custom Predicted Landing (' + landing.latlng.lat.toFixed(4) + ', ' + landing.latlng.lng.toFixed(4) + ') at ' 
+            + landing.datetime.format("HH:mm") + " UTC",
+            icon: customLandIcon
+        }
+    ).addTo(map);
+    
+    var customBurstMarker = L.marker(
+        burst.latlng,
+        {
+            title: 'Custom Burst Point (' + burst.latlng.lat.toFixed(4) + ', ' + burst.latlng.lng.toFixed(4) + 
+            ' at altitude ' + burst.latlng.alt.toFixed(0) + ') at ' 
+            + burst.datetime.format("HH:mm") + " UTC",
+            icon: customBurstIcon
+        }
+    ).addTo(map);
+    
+    // Create and add popup to land marker
+    var landPopupContent = 
+        "<div>" +
+        "<p><b>Custom Prediction</b><br/>" +
+        "Landing: " + landing.latlng.lat.toFixed(4) + ", " + landing.latlng.lng.toFixed(4) + "<br/>" +
+        "Time: " + landing.datetime.format("YYYY-MM-DD HH:mm:ss") + "<br/>" +
+        "Flight duration: " + formatFlightTime(prediction.flight_time) + "</p>" +
+        "<button class='remove-prediction-btn'>Remove prediction</button>" +
+        "</div>";
+    
+    customLandMarker.bindPopup(landPopupContent);
+    
+    // Store all elements for later removal
+    sourceMarker.customPrediction = {
+        path: customPathPolyline,
+        landMarker: customLandMarker,
+        burstMarker: customBurstMarker
+    };
+    
+    // Add event listener for removing prediction
+    customLandMarker.on('popupopen', function() {
+        $('.remove-prediction-btn').click(function() {
+            removeCustomPrediction(sourceMarker);
+        });
+    });
+    
+    // Pan to show both the source and landing
+    var bounds = L.latLngBounds(
+        [sourceMarker.getLatLng(), landing.latlng, burst.latlng]
+    );
+    map.fitBounds(bounds);
+    
+    appendDebug('Custom prediction completed. Landing at: ' + landing.latlng.lat.toFixed(4) + ', ' + landing.latlng.lng.toFixed(4));
+}
+
+function removeCustomPrediction(sourceMarker) {
+    if (sourceMarker.customPrediction) {
+        map.removeLayer(sourceMarker.customPrediction.path);
+        map.removeLayer(sourceMarker.customPrediction.landMarker);
+        map.removeLayer(sourceMarker.customPrediction.burstMarker);
+        
+        delete sourceMarker.customPrediction;
+        appendDebug('Custom prediction removed');
+    }
+}
+
+function formatFlightTime(seconds) {
+    var hours = Math.floor(seconds / 3600);
+    var minutes = Math.floor((seconds % 3600) / 60);
+    var secs = seconds % 60;
+    
+    return hours + "hr " + minutes + "min " + secs + "sec";
 }

@@ -362,7 +362,7 @@ function copyToClipboard(text) {
             
                     let now;
                     if (launchDatetime && launchDatetime !== 'now') {
-                        // リンクから取得した時間を9時間進める
+                        // リンクから取得した時間を8時間進める
                         now = new Date(launchDatetime);
                         now.setHours(now.getHours() + 8);
                     } else {
