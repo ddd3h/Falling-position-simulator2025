@@ -172,6 +172,9 @@ function tawhiriRequest(settings, extra_settings){
         } else if (settings.pred_type=='Gaussian_distribution'){
             plotGaussianDistribution(settings, extra_settings);
             return;
+        } else if (settings.pred_type=='Weibull_distribution'){
+            plotWeibullDistribution(settings, extra_settings);
+            return;
         } else {
             throwError("Invalid time step.");
             return;
@@ -918,7 +921,7 @@ function diffToColor(ascent_diff, burst_diff, descent_diff) {
     return 'rgb(' + red + ',' + green + ',' + blue + ')';
 }
 
-function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_diff = 0, burst_diff = 0, descent_diff = 0) {
+function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_diff = 0, burst_diff = 0, descent_diff = 0, isWeibull = false) {
     var launch = prediction_results.launch;
     var landing = prediction_results.landing;
     var burst = prediction_results.burst;
@@ -948,46 +951,100 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_di
     var lngDMS = toDMS(latlng.lng); 
     
     // プレーンテキストバージョンの予測内容を作成 (クリップボード用)
-    var predict_text = (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':\n' +
-        '着地予測(10進法): ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '\n' +
-        '着地予測(60進法): ' + latDMS + ', ' + lngDMS + '\n' +
-        '上昇速度差: σ=' + ascent_diff.toFixed(2) + '\n' +
-        'バースト高度差: σ=' + burst_diff.toFixed(2) + '\n' +
-        '降下速度差: σ=' + descent_diff.toFixed(2) + '\n' +
-        '着地予定時刻: ' + landing_time + '\n' + 
-        '飛行時間: ' + flight_time_str;
+    var predict_text;
+    if (isWeibull) {
+        // Format for Weibull distribution
+        predict_text = (i === -1 ? 'ワイブル中心点' : 'ワイブルサンプル' + (i + 1)) + ':\n' +
+            '着地予測(10進法): ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '\n' +
+            '着地予測(60進法): ' + latDMS + ', ' + lngDMS + '\n' +
+            'バースト高度: ' + burst.latlng.alt.toFixed(0) + ' m\n' +
+            'バースト高度差: ' + (i === -1 ? '0.0' : burst_diff.toFixed(1)) + '%\n' +
+            '着地予定時刻: ' + landing_time + '\n' + 
+            '飛行時間: ' + flight_time_str;
+    } else {
+        // Original format for Gaussian distribution
+        predict_text = (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':\n' +
+            '着地予測(10進法): ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '\n' +
+            '着地予測(60進法): ' + latDMS + ', ' + lngDMS + '\n' +
+            '上昇速度差: σ=' + ascent_diff.toFixed(2) + '\n' +
+            'バースト高度差: σ=' + burst_diff.toFixed(2) + '\n' +
+            '降下速度差: σ=' + descent_diff.toFixed(2) + '\n' +
+            '着地予定時刻: ' + landing_time + '\n' + 
+            '飛行時間: ' + flight_time_str;
+    }
     
     // 一意のIDをボタンに割り当て
     var buttonId = 'copy-btn-' + (i === -1 ? 'central' : i);
     var kmlButtonId = 'kml-btn-' + (i === -1 ? 'central' : i);
     var csvButtonId = 'csv-btn-' + (i === -1 ? 'central' : i);
-       
+    
     // コピーボタン付きの予測内容を作成
-    var predict_description = 
-        '<div style="position: relative;">' +
-        '<button id="' + buttonId + '" ' +
-        'style="position: absolute; top: 0; right: 0; background: none; border: none; cursor: pointer;" ' +
-        'title="クリップボードにコピー">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">' +
-        '<path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>' +
-        '<path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>' +
-        '</svg>' +
-        '</button>' +
-        '<div>' +
-        '<b>' + (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':</b><br/>' +
-        '<b>着地予測(10進法):</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
-        '<b>着地予測(60進法):</b> ' + latDMS + ', ' + lngDMS + '<br/>' +
-        '<b>上昇速度差:</b> ' + 'σ=' + ascent_diff.toFixed(2) + '<br/>' +
-        '<b>バースト高度差:</b> ' + 'σ=' + burst_diff.toFixed(2) + '<br/>' +
-        '<b>降下速度差:</b> ' + 'σ=' + descent_diff.toFixed(2) + '<br/>' +
-        '<b>着地予定時刻:</b> ' + landing_time + '<br/>' + 
-        '<b>飛行時間:</b> ' + flight_time_str + '<br/>' +
-        '<div style="margin-top: 10px;">' +
-        '<button id="' + kmlButtonId + '" style="margin-right: 5px;" class="control_button">KML</button>' +
-        '<button id="' + csvButtonId + '" class="control_button">CSV</button>' +
-        '</div>' +
-        '</div>' +
-        '</div>';
+    var predict_description;
+    if (isWeibull) {
+        // Enhanced display for Weibull distribution with better highlighting of burst altitude difference
+        var burst_alt_display = '';
+        if (i !== -1) {
+            var percentClass = burst_diff >= 0 ? 'positive-diff' : 'negative-diff';
+            var sign = burst_diff >= 0 ? '+' : '';
+            burst_alt_display = '<span style="background-color: #FFFF00; font-weight: bold;">' + sign + burst_diff.toFixed(1) + '%</span>';
+        } else {
+            burst_alt_display = '0.0%';
+        }
+        
+        predict_description = 
+            '<div style="position: relative;">' +
+            '<button id="' + buttonId + '" ' +
+            'style="position: absolute; top: 0; right: 0; background: none; border: none; cursor: pointer;" ' +
+            'title="クリップボードにコピー">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">' +
+            '<path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>' +
+            '<path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>' +
+            '</svg>' +
+            '</button>' +
+            '<div>' +
+            '<b style="color: #0000CC;">' + (i === -1 ? 'ワイブル中心点' : 'ワイブルサンプル' + (i + 1)) + ':</b><br/>' +
+            '<b>着地予測(10進法):</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
+            '<b>着地予測(60進法):</b> ' + latDMS + ', ' + lngDMS + '<br/>' +
+            '<b>バースト高度:</b> ' + burst.latlng.alt.toFixed(0) + ' m<br/>' +
+            '<div style="margin: 5px 0; padding: 5px; border: 1px solid #ccc; background-color: #f8f8f8;">' +
+            '<b>バースト高度差:</b> ' + burst_alt_display + '<br/>' +
+            '</div>' +
+            '<b>着地予定時刻:</b> ' + landing_time + '<br/>' + 
+            '<b>飛行時間:</b> ' + flight_time_str + '<br/>' +
+            '<div style="margin-top: 10px;">' +
+            '<button id="' + kmlButtonId + '" style="margin-right: 5px;" class="control_button">KML</button>' +
+            '<button id="' + csvButtonId + '" class="control_button">CSV</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    } else {
+        // Original display for Gaussian distribution
+        predict_description = 
+            '<div style="position: relative;">' +
+            '<button id="' + buttonId + '" ' +
+            'style="position: absolute; top: 0; right: 0; background: none; border: none; cursor: pointer;" ' +
+            'title="クリップボードにコピー">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">' +
+            '<path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>' +
+            '<path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>' +
+            '</svg>' +
+            '</button>' +
+            '<div>' +
+            '<b>' + (i === -1 ? '中心点' : 'サンプル' + (i + 1)) + ':</b><br/>' +
+            '<b>着地予測(10進法):</b> ' + latlng.lat.toFixed(4) + ', ' + latlng.lng.toFixed(4) + '<br/>' +
+            '<b>着地予測(60進法):</b> ' + latDMS + ', ' + lngDMS + '<br/>' +
+            '<b>上昇速度差:</b> ' + 'σ=' + ascent_diff.toFixed(2) + '<br/>' +
+            '<b>バースト高度差:</b> ' + 'σ=' + burst_diff.toFixed(2) + '<br/>' +
+            '<b>降下速度差:</b> ' + 'σ=' + descent_diff.toFixed(2) + '<br/>' +
+            '<b>着地予定時刻:</b> ' + landing_time + '<br/>' + 
+            '<b>飛行時間:</b> ' + flight_time_str + '<br/>' +
+            '<div style="margin-top: 10px;">' +
+            '<button id="' + kmlButtonId + '" style="margin-right: 5px;" class="control_button">KML</button>' +
+            '<button id="' + csvButtonId + '" class="control_button">CSV</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    }
 
     // ポップアップを作成
     var landing_popup = new L.popup({
@@ -1006,6 +1063,7 @@ function plotMultiplePredictionWithColor(prediction_results, i, color, ascent_di
     marker.burst_diff = burst_diff;
     marker.descent_diff = descent_diff;
     marker.markerId = i;
+    marker.isWeibull = isWeibull;
     
     // ポップアップが開かれたときにボタンにイベントハンドラを追加
     marker.on('popupopen', function(e) {
@@ -1752,4 +1810,270 @@ function formatFlightTime(seconds) {
     var secs = seconds % 60;
     
     return hours + "hr " + minutes + "min " + secs + "sec";
+}
+
+function plotWeibullDistribution(settings, extra_settings) {
+    var ascent_rate = parseFloat($('#ascent').val());
+    var burst_altitude = parseFloat($('#burst').val());
+    var descent_rate = parseFloat($('#drag').val());
+
+    clearMarkers();
+
+    // Settings for Weibull distribution
+    var shape = 3.0; // Shape parameter k > 1 indicates increasing failure rate with time/altitude
+    var scale = burst_altitude; // Scale parameter λ (lambda)
+
+    // Store all landing points for KML/CSV export
+    var all_landing_points = [];
+    var all_prediction_results = [];
+    var completedRequests = 0;
+    var totalRequests = 101; // 100 samples + 1 central point
+    var burst_altitudes = [];
+
+    // Generate Weibull distributed values for burst altitude
+    // We'll use shape and scale to generate values around the target burst altitude
+    for (var i = 0; i < 100; i++) {
+        var burst_sample = weibullRandom(shape, scale);
+        burst_altitudes.push(burst_sample);
+    }
+
+    // Central landing point (mean values)
+    var centralSettings = { ...settings };
+    centralSettings.ascent_rate = ascent_rate;
+    centralSettings.burst_altitude = burst_altitude;
+    centralSettings.descent_rate = descent_rate;
+
+    var central_point = null;
+    $.get(tawhiri_api, centralSettings)
+        .done(function (data) {
+            central_point = parsePrediction(data.prediction).landing.latlng;
+
+            var central_prediction_results = parsePrediction(data.prediction);
+            all_prediction_results.push({
+                result: central_prediction_results,
+                color: 'red',
+                isCentral: true,
+                ascent: ascent_rate,
+                burst: burst_altitude,
+                descent: descent_rate
+            });
+            all_landing_points.push({
+                latlng: central_point,
+                color: 'red',
+                isCentral: true,
+                ascent: ascent_rate,
+                burst: burst_altitude,
+                descent: descent_rate
+            });
+            
+            // For central point, use special flag to indicate Weibull distribution
+            plotMultiplePredictionWithColor(central_prediction_results, -1, 'red', 0, 0, 0, true);
+            completedRequests++;
+
+            // Plot the distributions on the map
+            var landing_points = [];
+            for (let i = 0; i < burst_altitudes.length; i++) {
+                var settings_copy = { ...settings };
+                settings_copy.ascent_rate = ascent_rate; // Keep ascent rate constant
+                settings_copy.burst_altitude = burst_altitudes[i];
+                settings_copy.descent_rate = descent_rate; // Keep descent rate constant
+            
+                // Run the prediction for each sample
+                $.get(tawhiri_api, settings_copy)
+                    .done(function (data) {
+                        var prediction_results = parsePrediction(data.prediction);
+                        var landing_point = prediction_results.landing.latlng;
+                        landing_points.push(landing_point);
+            
+                        // Calculate how far this sample is from the target burst altitude
+                        // Calculate percentage difference rather than a normalized value
+                        var burst_percentage_diff = ((burst_altitudes[i] - burst_altitude) / burst_altitude) * 100;
+                        var burst_diff = Math.abs(burst_percentage_diff) / 20; // Scale to 0-1 range (assuming max 20% diff)
+                        burst_diff = Math.min(burst_diff, 1.0); // Clamp to 1.0 max
+                        
+                        // Map distance to a color
+                        var color = burstDiffToColor(burst_diff);
+                        
+                        // Store for export
+                        all_prediction_results.push({
+                            result: prediction_results,
+                            color: color,
+                            isCentral: false,
+                            ascent: ascent_rate,
+                            burst: burst_altitudes[i],
+                            descent: descent_rate,
+                            burst_percentage_diff: burst_percentage_diff
+                        });
+                        all_landing_points.push({
+                            latlng: landing_point,
+                            color: color,
+                            isCentral: false,
+                            ascent: ascent_rate,
+                            burst: burst_altitudes[i],
+                            descent: descent_rate,
+                            burst_percentage_diff: burst_percentage_diff
+                        });
+                        
+                        // Plot each prediction with Weibull flag and percentage difference
+                        plotMultiplePredictionWithColor(prediction_results, i, color, 0, burst_percentage_diff, 0, true);
+                        
+                        completedRequests++;
+                        
+                        // When all predictions are complete, enable download buttons
+                        if (completedRequests >= totalRequests) {
+                            enableWeibullDownloads(all_landing_points, all_prediction_results);
+                        }
+                    })
+                    .fail(function (data) {
+                        console.error("Prediction failed for Weibull sample");
+                        completedRequests++;
+                        
+                        // Even if some fail, enable downloads when all requests are processed
+                        if (completedRequests >= totalRequests) {
+                            enableWeibullDownloads(all_landing_points, all_prediction_results);
+                        }
+                    });
+            }
+        })
+        .fail(function (data) {
+            console.error("Central point prediction failed");
+            completedRequests++;
+        });
+}
+
+// Generate a random value from Weibull distribution
+function weibullRandom(shape, scale) {
+    // Generate a uniform random number between 0 and 1
+    var u = Math.random();
+    
+    // Apply inverse CDF of Weibull distribution
+    // F^(-1)(u) = λ * (-ln(1-u))^(1/k)
+    // For numerical stability, we can use -ln(u) instead of -ln(1-u)
+    var x = scale * Math.pow(-Math.log(u), 1/shape);
+    
+    return x;
+}
+
+// Convert burst altitude difference to a color
+function burstDiffToColor(burst_diff) {
+    // Create a color that transitions from green (low diff) to red (high diff)
+    var red = Math.round(255 * burst_diff);
+    var green = Math.round(255 * (1 - burst_diff));
+    var blue = 0;
+    
+    return 'rgb(' + red + ',' + green + ',' + blue + ')';
+}
+
+// Add downloads for Weibull distribution
+function enableWeibullDownloads(landingPoints, predictionResults) {
+    // First clean up any existing download buttons
+    $('#weibull-download-container').remove();
+    
+    // Add download buttons in same style and location as other prediction types
+    var container = $('<div id="weibull-download-container" class="panel-body"></div>');
+    
+    var kmlBtn = $('<a id="weibull-download-kml" class="btn btn-default">Download KML</a>');
+    var csvBtn = $('<a id="weibull-download-csv" class="btn btn-default">Download CSV</a>');
+    
+    container.append(kmlBtn).append(' ').append(csvBtn);
+    
+    // Insert the container at the same location as other downloads
+    $('#downloads').append(container);
+    
+    // Add click handlers
+    $('#weibull-download-kml').off('click').on('click', function(e) {
+        e.preventDefault();
+        downloadWeibullKML(landingPoints, predictionResults);
+    });
+    
+    $('#weibull-download-csv').off('click').on('click', function(e) {
+        e.preventDefault();
+        downloadWeibullCSV(landingPoints, predictionResults);
+    });
+    
+    // Show the download section if it was hidden
+    $('#downloads').show();
+}
+
+function downloadWeibullKML(landingPoints, predictionResults) {
+    var kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
+    kml += '<Document>\n';
+    kml += '<name>WASA Weibull Distribution Prediction</name>\n';
+    
+    // Add style for central point
+    kml += '<Style id="centralPoint">\n';
+    kml += '  <IconStyle>\n';
+    kml += '    <color>ff0000ff</color>\n';
+    kml += '    <scale>1.2</scale>\n';
+    kml += '  </IconStyle>\n';
+    kml += '</Style>\n';
+    
+    // Add style for other points
+    kml += '<Style id="samplePoint">\n';
+    kml += '  <IconStyle>\n';
+    kml += '    <scale>0.8</scale>\n';
+    kml += '  </IconStyle>\n';
+    kml += '</Style>\n';
+    
+    // Add points
+    landingPoints.forEach(function(point, index) {
+        var styleUrl = point.isCentral ? "#centralPoint" : "#samplePoint";
+        var name = point.isCentral ? "Central Landing Point" : "Sample Landing Point " + index;
+        var description = "Burst Altitude: " + point.burst.toFixed(2) + " m<br/>" +
+                         "Ascent Rate: " + point.ascent.toFixed(2) + " m/s<br/>" +
+                         "Descent Rate: " + point.descent.toFixed(2) + " m/s";
+        
+        kml += '<Placemark>\n';
+        kml += '  <name>' + name + '</name>\n';
+        kml += '  <description><![CDATA[' + description + ']]></description>\n';
+        kml += '  <styleUrl>' + styleUrl + '</styleUrl>\n';
+        kml += '  <Point>\n';
+        kml += '    <coordinates>' + point.latlng.lng + ',' + point.latlng.lat + ',0</coordinates>\n';
+        kml += '  </Point>\n';
+        kml += '</Placemark>\n';
+    });
+    
+    kml += '</Document>\n';
+    kml += '</kml>';
+    
+    // Create download link
+    var blob = new Blob([kml], {type: 'application/vnd.google-earth.kml+xml'});
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = 'weibull_prediction_' + new Date().toISOString().split('T')[0] + '.kml';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function downloadWeibullCSV(landingPoints, predictionResults) {
+    var csv = 'Type,Latitude,Longitude,Ascent Rate (m/s),Burst Altitude (m),Burst Altitude Difference (%),Descent Rate (m/s),Color\n';
+    
+    landingPoints.forEach(function(point) {
+        var type = point.isCentral ? "Central" : "Sample";
+        var burst_diff_pct = point.burst_percentage_diff || 0;
+        
+        csv += type + ',' +
+               point.latlng.lat.toFixed(6) + ',' +
+               point.latlng.lng.toFixed(6) + ',' +
+               point.ascent.toFixed(2) + ',' +
+               point.burst.toFixed(2) + ',' +
+               burst_diff_pct.toFixed(2) + ',' +
+               point.descent.toFixed(2) + ',' +
+               point.color + '\n';
+    });
+    
+    // Create download link
+    var blob = new Blob([csv], {type: 'text/csv'});
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = 'weibull_prediction_' + new Date().toISOString().split('T')[0] + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
 }
