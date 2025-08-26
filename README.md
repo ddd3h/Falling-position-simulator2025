@@ -6,6 +6,11 @@ CUSFが公開しているサイト(https://predict.sondehub.org/ )を自団体�
 サイトの中身は以下のリンクから確認できます！
 https://wasa-rockoon.github.io/Falling-position-simulator/
 
+## GitHub Pagesでの公開
+このリポジトリでは GitHub Actions を利用して GitHub Pages に自動デプロイされます。
+main ブランチに push するとワークフローが実行され、最新のファイルが公開されます。
+リポジトリの Settings > Pages で「Build and deployment」→「Source」を "GitHub Actions" に設定してください。
+
 ##　Upcoming Feature
 今後自分が実装したいものを記入していきます。
 ・ガス計算シートの実装
