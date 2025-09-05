@@ -348,7 +348,7 @@ function copyToClipboard(text) {
             </td>
         </tr>
         <tr>
-            <td>打ち上げ時間 (MST):</td>
+            <td>打ち上げ時間 (JST):</td>
             <td>
                 <input id="hour" type="text" name="hour" value="" maxlength="2" size="2" style="width: 1.5em;"> :
                 <input id="min" type="text" name="min" value="" maxlength="2" size="2" style="width: 1.5em;">
@@ -364,7 +364,7 @@ function copyToClipboard(text) {
                     if (launchDatetime && launchDatetime !== 'now') {
                         // リンクから取得した時間を8時間進める
                         now = new Date(launchDatetime);
-                        now.setHours(now.getHours() + 8);
+                        now.setHours(now.getHours() + 9);
                     } else {
                         // リンクがなければ現在時刻を使用
                         now = new Date();
